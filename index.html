@@ -9,7 +9,7 @@
       --bg-a: #0f0c29; --bg-b: #302b63; --bg-c: #24243e;
       --accent-1: #d63af9; --accent-2: #ff4e8e;
       --card-bg: #ffffff;
-      --card-shadow: 0 4px 8px rgba(0,0,0,.12), 0 24px 64px rgba(0,0,0,.35);
+      --card-shadow: 0 4px 8px rgba(0,0,0,.14), 0 24px 64px rgba(0,0,0,.38);
       --card-radius: 26px;
       --btn-bg: #f5f6fa; --btn-border: #e4e7f0; --btn-radius: 16px;
       --text-900: #14143a; --text-500: #4a5568; --text-300: #a0aec0;
@@ -23,28 +23,34 @@
       background: linear-gradient(145deg, var(--bg-a) 0%, var(--bg-b) 50%, var(--bg-c) 100%);
       display: flex; align-items: flex-start; justify-content: center;
       padding: 28px 16px 56px;
+      overflow-x: hidden; /* verhindert horizontalen Scroll durch überstehende Tiere */
     }
 
-    .game { width: 100%; max-width: 500px; padding-top: 20px; }
+    /* Spielfeld – extra padding damit Tiere über/unter Karte Platz haben */
+    .game { width: 100%; max-width: 480px; padding-top: 72px; padding-bottom: 72px; }
 
-    /* Card ohne eigenes Padding – Scene + card-body übernehmen das */
+    /* Karte: overflow:visible damit Tiere über Kartenrand hinausragen können */
     .card {
       background: var(--card-bg);
       border-radius: var(--card-radius);
       box-shadow: var(--card-shadow);
-      overflow: hidden;
+      position: relative; /* Ankerpunkt für absolute Tier-Positionierung */
+      overflow: visible;
     }
 
-    /* Buntes Tier-Banner oben in der Karte */
-    .scene {
-      width: 100%;
-      display: block;
+    /* Inhalt der Karte */
+    .card-body { padding: 28px 28px 32px; }
+    @media (max-width: 380px) { .card-body { padding: 22px 20px 26px; } }
+
+    /* ── Tiere ─────────────────────────────────────────────── */
+    /* Jedes Tier ist absolut relativ zur .card positioniert */
+    .a {
+      position: absolute;
+      pointer-events: none;
+      z-index: 4; /* vor der Karte, damit Körper über Kante hinausragt */
     }
 
-    /* Inhalt unterhalb der Tiere */
-    .card-body { padding: 20px 28px 32px; }
-    @media (max-width: 380px) { .card-body { padding: 16px 20px 24px; } }
-
+    /* ── Screen-Übergänge ──────────────────────────────────── */
     .screen { display: none; }
     .screen.active {
       display: block;
@@ -55,10 +61,12 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
+    /* ── Fortschrittsbalken ──────────────────────────────────── */
     .progress { display: flex; gap: 7px; margin-bottom: 26px; }
     .progress-step { flex: 1; height: 5px; border-radius: 3px; background: var(--btn-border); transition: background .35s; }
     .progress-step.filled { background: linear-gradient(90deg, var(--accent-1), var(--accent-2)); }
 
+    /* ── Fragen-Label & Text ─────────────────────────────────── */
     .q-label {
       font-size: 11px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
       background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
@@ -68,6 +76,7 @@
     .q-text { font-size: 18px; font-weight: 600; line-height: 1.55; color: var(--text-900); margin-bottom: 26px; }
     @media (min-width: 400px) { .q-text { font-size: 20px; } }
 
+    /* ── Antwort-Buttons ─────────────────────────────────────── */
     .options { display: flex; flex-direction: column; gap: 10px; }
     .opt {
       background: var(--btn-bg); border: 2px solid var(--btn-border); border-radius: var(--btn-radius);
@@ -83,9 +92,9 @@
     }
     .opt:active { transform: translateY(0); }
 
+    /* ── Intro ───────────────────────────────────────────────── */
     .intro-title { font-size: 24px; font-weight: 700; color: var(--text-900); text-align: center; margin-bottom: 10px; }
     .intro-sub   { font-size: 15px; color: var(--text-500); text-align: center; line-height: 1.65; margin-bottom: 32px; }
-
     .cta-btn {
       display: block; width: 100%; padding: 18px;
       background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
@@ -95,6 +104,7 @@
     }
     .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(214,58,249,.42); opacity:.93; }
 
+    /* ── Finale ──────────────────────────────────────────────── */
     .finale-badge {
       display: block; font-size: 11px; font-weight: 700; letter-spacing: 2.5px;
       text-transform: uppercase; text-align: center;
@@ -113,7 +123,6 @@
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
     .finale-hint { font-size: 13px; color: var(--text-300); text-align: center; font-style: italic; line-height: 1.65; margin-bottom: 28px; }
-
     .yes-btn {
       display: block; width: 100%; padding: 20px;
       background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
@@ -124,10 +133,11 @@
     .yes-btn:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 14px 38px rgba(214,58,249,.5); }
     .yes-btn:active { transform: translateY(0) scale(1); }
 
+    /* ── Celebration Overlay ─────────────────────────────────── */
     #celebration {
-      display: none; position: fixed; inset: 0; background: rgba(8,8,28,.75);
-      backdrop-filter: blur(5px); z-index: 999;
-      align-items: center; justify-content: center; padding: 24px;
+      display: none; position: fixed; inset: 0;
+      background: rgba(8,8,28,.78); backdrop-filter: blur(5px);
+      z-index: 999; align-items: center; justify-content: center; padding: 24px;
     }
     #celebration.show { display: flex; }
     .celeb-card {
@@ -145,98 +155,89 @@
 <body>
 <div class="game">
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- ════════════════════════════════════════════════════════
        SCREEN 0 · INTRO
-       Bär mit Lupe + Hase mit Umschlag
-  ══════════════════════════════════════════════════════════ -->
+       Bär oben-links + Hase unten-rechts
+  ════════════════════════════════════════════════════════ -->
   <div class="screen active" id="s0">
     <div class="card">
-      <svg class="scene" viewBox="0 0 320 145" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bg0" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#fff0f8"/><stop offset="100%" stop-color="#ede8ff"/>
-          </linearGradient>
-        </defs>
-        <rect width="320" height="145" fill="url(#bg0)"/>
-        <!-- Sterne Deko -->
-        <text x="158" y="38" font-size="18" fill="#d63af9" opacity=".25">✦</text>
-        <text x="148" y="115" font-size="11" fill="#ff4e8e" opacity=".2">✦</text>
-        <text x="170" y="108" font-size="9"  fill="#d63af9" opacity=".2">✦</text>
 
-        <!-- ── BÄR links (neugierig, mit Lupe) ── -->
-        <g transform="translate(38,8)">
-          <!-- Körper -->
-          <ellipse cx="40" cy="118" rx="30" ry="18" fill="#c4856a"/>
-          <!-- Ohren -->
-          <circle cx="11" cy="18" r="13" fill="#c4856a"/>
-          <circle cx="69" cy="18" r="13" fill="#c4856a"/>
-          <circle cx="11" cy="18" r="8"  fill="#a06548"/>
-          <circle cx="69" cy="18" r="8"  fill="#a06548"/>
-          <!-- Kopf -->
-          <circle cx="40" cy="54" r="38" fill="#c4856a"/>
-          <!-- Schnauze -->
-          <ellipse cx="40" cy="65" rx="20" ry="13" fill="#e8c4a0"/>
-          <!-- Augen -->
-          <circle cx="26" cy="47" r="8"  fill="#1a1a1a"/>
-          <circle cx="54" cy="47" r="8"  fill="#1a1a1a"/>
-          <circle cx="29" cy="44" r="3"  fill="white"/>
-          <circle cx="57" cy="44" r="3"  fill="white"/>
-          <!-- Nase -->
-          <ellipse cx="40" cy="63" rx="4.5" ry="3" fill="#1a1a1a"/>
-          <!-- Wangen -->
-          <circle cx="16" cy="63" r="8" fill="#ffb3ba" opacity=".5"/>
-          <circle cx="64" cy="63" r="8" fill="#ffb3ba" opacity=".5"/>
-          <!-- Mund -->
-          <path d="M34,71 Q40,77 46,71" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
-          <!-- Arm mit Lupe -->
-          <path d="M70,82 Q88,76 96,84" fill="none" stroke="#c4856a" stroke-width="11" stroke-linecap="round"/>
-          <!-- Lupe -->
-          <circle cx="106" cy="89" r="14" fill="none" stroke="#8B6914" stroke-width="3.5"/>
-          <circle cx="106" cy="89" r="10" fill="rgba(200,230,255,.35)"/>
-          <line  x1="117" y1="100" x2="126" y2="111" stroke="#8B6914" stroke-width="4" stroke-linecap="round"/>
-          <text x="101" y="95" font-size="12" fill="#8B6914" font-weight="bold">?</text>
-        </g>
-
-        <!-- ── HASE rechts (mit Briefumschlag) ── -->
-        <g transform="translate(180,10)">
-          <!-- Körper -->
-          <ellipse cx="40" cy="116" rx="28" ry="18" fill="#f0ece8"/>
-          <!-- Ohren -->
-          <ellipse cx="22" cy="5"  rx="11" ry="26" fill="#f0ece8"/>
-          <ellipse cx="58" cy="5"  rx="11" ry="26" fill="#f0ece8"/>
-          <ellipse cx="22" cy="5"  rx="6.5" ry="19" fill="#ffc8d0" opacity=".7"/>
-          <ellipse cx="58" cy="5"  rx="6.5" ry="19" fill="#ffc8d0" opacity=".7"/>
-          <!-- Kopf -->
-          <circle cx="40" cy="57" r="36" fill="#f0ece8"/>
-          <!-- Schnauze -->
-          <ellipse cx="40" cy="67" rx="18" ry="12" fill="#e8ddd8"/>
-          <!-- Augen -->
-          <circle cx="27" cy="51" r="7"  fill="#1a1a1a"/>
-          <circle cx="53" cy="51" r="7"  fill="#1a1a1a"/>
-          <circle cx="29" cy="48" r="2.5" fill="white"/>
-          <circle cx="55" cy="48" r="2.5" fill="white"/>
-          <!-- Nase -->
-          <ellipse cx="40" cy="65" rx="3.5" ry="2.5" fill="#ffb3ba"/>
-          <!-- Wangen -->
-          <circle cx="18" cy="65" r="7" fill="#ffb3ba" opacity=".5"/>
-          <circle cx="62" cy="65" r="7" fill="#ffb3ba" opacity=".5"/>
-          <!-- Mund -->
-          <path d="M35,72 Q40,77 45,72" fill="none" stroke="#1a1a1a" stroke-width="1.8" stroke-linecap="round"/>
-          <!-- Arm mit Umschlag -->
-          <path d="M10,84 Q-5,77 -14,84" fill="none" stroke="#f0ece8" stroke-width="10" stroke-linecap="round"/>
-          <!-- Umschlag -->
-          <rect x="-40" y="76" width="30" height="21" rx="3" fill="#fff9e6" stroke="#e0c870" stroke-width="1.5"/>
-          <path d="M-40,76 L-25,88 L-10,76" fill="none" stroke="#e0c870" stroke-width="1.5"/>
-          <!-- Herz drauf -->
-          <path d="M-28,85 C-28,83 -25,81 -25,84 C-25,81 -22,83 -22,85 C-22,87 -25,89 -25,89 C-25,89 -28,87 -28,85Z" fill="#ff8fab"/>
-        </g>
+      <!-- BÄR oben-links mit Lupe -->
+      <svg class="a" style="top:-66px;left:-18px;width:92px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
+        <!-- Ohren -->
+        <circle cx="22" cy="14" r="13" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <circle cx="22" cy="14" r="8"  fill="#a06548"/>
+        <circle cx="68" cy="14" r="13" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <circle cx="68" cy="14" r="8"  fill="#a06548"/>
+        <!-- Körper -->
+        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#e8c4a0"/>
+        <!-- linker Arm -->
+        <ellipse cx="10" cy="68" rx="9" ry="13" fill="#c4856a" stroke="#333" stroke-width="1.5" transform="rotate(-15,10,68)"/>
+        <!-- rechter Arm (hochgehoben für Lupe) -->
+        <ellipse cx="82" cy="58" rx="9" ry="13" fill="#c4856a" stroke="#333" stroke-width="1.5" transform="rotate(-35,82,58)"/>
+        <!-- Füße -->
+        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <!-- Kopf -->
+        <circle cx="46" cy="38" r="27" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="44" rx="14" ry="10" fill="#e8c4a0" stroke="#333" stroke-width="1"/>
+        <!-- Augen -->
+        <circle cx="35" cy="33" r="5.5" fill="#222"/>
+        <circle cx="57" cy="33" r="5.5" fill="#222"/>
+        <circle cx="37" cy="31" r="2"   fill="white"/>
+        <circle cx="59" cy="31" r="2"   fill="white"/>
+        <ellipse cx="46" cy="42" rx="3" ry="2" fill="#222"/>
+        <circle cx="26" cy="41" r="6" fill="#ffb3ba" opacity=".55"/>
+        <circle cx="66" cy="41" r="6" fill="#ffb3ba" opacity=".55"/>
+        <path d="M41,48 Q46,53 51,48" fill="none" stroke="#222" stroke-width="1.8" stroke-linecap="round"/>
+        <!-- Lupe -->
+        <circle cx="84" cy="42" r="12" fill="none" stroke="#8B6914" stroke-width="3"/>
+        <circle cx="84" cy="42" r="8"  fill="rgba(190,220,255,.35)"/>
+        <line  x1="93" y1="51" x2="100" y2="60" stroke="#8B6914" stroke-width="3.5" stroke-linecap="round"/>
       </svg>
+
+      <!-- HASE unten-rechts mit Umschlag -->
+      <svg class="a" style="bottom:-62px;right:-18px;width:88px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
+        <!-- Ohren -->
+        <ellipse cx="30" cy="6"  rx="11" ry="24" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="62" cy="6"  rx="11" ry="24" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="30" cy="6"  rx="6.5" ry="17" fill="#ffc8d0"/>
+        <ellipse cx="62" cy="6"  rx="6.5" ry="17" fill="#ffc8d0"/>
+        <!-- Körper -->
+        <ellipse cx="46" cy="76" rx="32" ry="25" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="80" rx="20" ry="16" fill="#ede5de"/>
+        <!-- linker Arm (hält Umschlag) -->
+        <ellipse cx="10" cy="62" rx="9" ry="13" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(-20,10,62)"/>
+        <!-- rechter Arm -->
+        <ellipse cx="82" cy="68" rx="9" ry="13" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(12,82,68)"/>
+        <!-- Füße -->
+        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <!-- Kopf -->
+        <circle cx="46" cy="42" r="27" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="48" rx="13" ry="9" fill="#ede5de" stroke="#333" stroke-width="1"/>
+        <!-- Augen -->
+        <circle cx="35" cy="37" r="5.5" fill="#222"/>
+        <circle cx="57" cy="37" r="5.5" fill="#222"/>
+        <circle cx="37" cy="35" r="2"   fill="white"/>
+        <circle cx="59" cy="35" r="2"   fill="white"/>
+        <ellipse cx="46" cy="46" rx="3" ry="2" fill="#ffb3ba"/>
+        <circle cx="26" cy="44" r="6" fill="#ffb3ba" opacity=".5"/>
+        <circle cx="66" cy="44" r="6" fill="#ffb3ba" opacity=".5"/>
+        <path d="M41,52 Q46,57 51,52" fill="none" stroke="#222" stroke-width="1.8" stroke-linecap="round"/>
+        <!-- Umschlag -->
+        <rect x="-6" y="56" width="26" height="18" rx="3" fill="#fff9e0" stroke="#e0c870" stroke-width="1.5"/>
+        <path d="M-6,56 L7,66 L20,56" fill="none" stroke="#e0c870" stroke-width="1.5"/>
+        <path d="M0,63 C0,61 3,59 3,62 C3,59 6,61 6,63 C6,65 3,67 3,67 C3,67 0,65 0,63Z" fill="#ff8fab"/>
+      </svg>
+
       <div class="card-body">
         <h1 class="intro-title">Geheime Date-Mission</h1>
+        <!-- FIX 1: "Art …" → "Art" – Punkte entfernt -->
         <p class="intro-sub">
-          Bevor ich dir verrate, was ich plane, brauchst du erst
-          eine Art&nbsp;… Eignungstest. Keine Angst – er
-          ist lösbar. Meistens.
+          Bevor ich dir verrate, was ich plane, brauchst du erst eine Art Eignungstest.
+          Keine Angst – er ist lösbar. Meistens.
         </p>
         <button class="cta-btn" onclick="goTo('s1')">Test starten →</button>
       </div>
@@ -244,83 +245,89 @@
   </div>
 
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- ════════════════════════════════════════════════════════
        SCREEN 1 · FRAGE 1 – Herausforderung
-       Katze (selbstsicher, flexend) + Hund (nervös, schwitzend)
-  ══════════════════════════════════════════════════════════ -->
+       Katze oben-rechts (entschlossen) + Hund unten-links (nervös)
+  ════════════════════════════════════════════════════════ -->
   <div class="screen" id="s1">
     <div class="card">
-      <svg class="scene" viewBox="0 0 320 145" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#fff3f0"/><stop offset="100%" stop-color="#f0f4ff"/>
-          </linearGradient>
-        </defs>
-        <rect width="320" height="145" fill="url(#bg1)"/>
-        <text x="154" y="75" text-anchor="middle" font-size="20" fill="#d63af9" opacity=".3" font-weight="bold">VS</text>
 
-        <!-- ── KATZE links (entschlossen, Bizeps) ── -->
-        <g transform="translate(28,8)">
-          <ellipse cx="45" cy="118" rx="32" ry="18" fill="#b8c0cc"/>
-          <!-- Spitze Ohren -->
-          <polygon points="10,25 2,3 26,15"  fill="#b8c0cc"/>
-          <polygon points="80,25 88,3 64,15" fill="#b8c0cc"/>
-          <polygon points="13,23 7,7 24,15"  fill="#ffc8d0"/>
-          <polygon points="77,23 83,7 66,15" fill="#ffc8d0"/>
-          <circle cx="45" cy="60" r="40" fill="#b8c0cc"/>
-          <ellipse cx="45" cy="71" rx="21" ry="13" fill="#d4dce8"/>
-          <!-- Entschlossene Augen (leicht zusammengekniffen) -->
-          <ellipse cx="30" cy="54" rx="8.5" ry="6.5" fill="#1a1a1a"/>
-          <ellipse cx="60" cy="54" rx="8"   ry="6"   fill="#1a1a1a"/>
-          <circle cx="33" cy="51" r="2.5" fill="white"/>
-          <circle cx="63" cy="51" r="2.5" fill="white"/>
-          <!-- Entschlossene Augenbrauen -->
-          <path d="M22,44 Q30,40 38,44" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
-          <path d="M52,44 Q60,40 68,44" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
-          <!-- Nase + Schnurrhaare -->
-          <path d="M38,69 L45,73 L52,69" fill="none" stroke="#8090a0" stroke-width="1.5"/>
-          <circle cx="45" cy="70" r="3" fill="#8090a0"/>
-          <line x1="4"  y1="67" x2="28" y2="71" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-          <line x1="4"  y1="71" x2="28" y2="73" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-          <line x1="62" y1="71" x2="86" y2="67" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-          <line x1="62" y1="73" x2="86" y2="71" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-          <circle cx="16" cy="68" r="7" fill="#ffb3ba" opacity=".35"/>
-          <circle cx="74" cy="68" r="7" fill="#ffb3ba" opacity=".35"/>
-          <!-- Selbstbewusstes Lächeln -->
-          <path d="M38,79 Q45,86 52,79" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
-          <!-- Flexender Arm + Bizeps -->
-          <path d="M80,93 Q100,72 110,75" fill="none" stroke="#b8c0cc" stroke-width="12" stroke-linecap="round"/>
-          <circle cx="110" cy="76" r="11" fill="#b8c0cc"/>
-          <path d="M101,68 Q106,63 111,66" fill="none" stroke="#909aaa" stroke-width="1.8" opacity=".5"/>
-        </g>
-
-        <!-- ── HUND rechts (nervös, Schweißtropfen) ── -->
-        <g transform="translate(180,12)">
-          <!-- Hängeohren (hinter Kopf) -->
-          <ellipse cx="10" cy="54" rx="13" ry="28" fill="#d4a56a" transform="rotate(-8,10,54)"/>
-          <ellipse cx="70" cy="54" rx="13" ry="28" fill="#d4a56a" transform="rotate(8,70,54)"/>
-          <ellipse cx="40" cy="116" rx="30" ry="18" fill="#d4a56a"/>
-          <circle cx="40" cy="58" r="37" fill="#d4a56a"/>
-          <ellipse cx="40" cy="70" rx="22" ry="15" fill="#e8c488"/>
-          <!-- Besorgte Augen -->
-          <circle cx="26" cy="52" r="8"  fill="#1a1a1a"/>
-          <circle cx="54" cy="52" r="8"  fill="#1a1a1a"/>
-          <circle cx="28" cy="49" r="2.5" fill="white"/>
-          <circle cx="56" cy="49" r="2.5" fill="white"/>
-          <!-- Hochgezogene Augenbrauen (besorgt) -->
-          <path d="M20,42 Q26,38 32,42" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
-          <path d="M48,42 Q54,38 60,42" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
-          <ellipse cx="40" cy="67" rx="6" ry="4.5" fill="#1a1a1a"/>
-          <circle cx="38" cy="65" r="1.5" fill="rgba(255,255,255,.4)"/>
-          <circle cx="16" cy="68" r="8" fill="#ffb3ba" opacity=".5"/>
-          <circle cx="64" cy="68" r="8" fill="#ffb3ba" opacity=".5"/>
-          <!-- Zitternder Mund -->
-          <path d="M32,78 Q36,74 40,78 Q44,81 48,78" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
-          <!-- Schweißtropfen -->
-          <path d="M70,36 Q72,28 74,36 Q74,41 72,41 Q70,41 70,36Z" fill="#a8d8f0"/>
-          <path d="M78,48 Q80,42 81,48 Q81,51 79.5,51 Q78,51 78,48Z" fill="#a8d8f0"/>
-        </g>
+      <!-- KATZE oben-rechts, flexend -->
+      <svg class="a" style="top:-66px;right:-18px;width:92px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
+        <!-- Spitze Ohren -->
+        <polygon points="20,22 10,2 34,14"  fill="#b8c0cc" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+        <polygon points="72,22 82,2 58,14"  fill="#b8c0cc" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+        <polygon points="22,20 14,6 32,14"  fill="#ffc8d0"/>
+        <polygon points="70,20 78,6 60,14"  fill="#ffc8d0"/>
+        <!-- Körper -->
+        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#d4dce8"/>
+        <!-- linker Arm (herunter) -->
+        <ellipse cx="10" cy="70" rx="9" ry="13" fill="#b8c0cc" stroke="#333" stroke-width="1.5" transform="rotate(-10,10,70)"/>
+        <!-- rechter Arm (hoch – Bizeps) -->
+        <ellipse cx="84" cy="56" rx="9" ry="13" fill="#b8c0cc" stroke="#333" stroke-width="1.5" transform="rotate(-40,84,56)"/>
+        <circle  cx="82" cy="46" r="10" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
+        <!-- Füße -->
+        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
+        <!-- Kopf -->
+        <circle cx="46" cy="40" r="27" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="47" rx="14" ry="10" fill="#d4dce8" stroke="#333" stroke-width="1"/>
+        <!-- Entschlossene Augen (leicht zugekniffen) -->
+        <ellipse cx="34" cy="36" rx="6"   ry="5"   fill="#222"/>
+        <ellipse cx="58" cy="36" rx="6"   ry="4.5" fill="#222"/>
+        <circle  cx="36" cy="34" r="2"   fill="white"/>
+        <circle  cx="60" cy="34" r="2"   fill="white"/>
+        <!-- Entschlossene Augenbrauen -->
+        <path d="M27,28 Q34,24 41,28" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M51,28 Q58,24 65,28" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round"/>
+        <!-- Nase + Schnurrhaare -->
+        <circle cx="46" cy="45" r="2.5" fill="#8090a0"/>
+        <line x1="8"  y1="44" x2="30" y2="47" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+        <line x1="8"  y1="48" x2="30" y2="49" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+        <line x1="62" y1="47" x2="84" y2="44" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+        <line x1="62" y1="49" x2="84" y2="48" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+        <circle cx="26" cy="44" r="6" fill="#ffb3ba" opacity=".35"/>
+        <circle cx="66" cy="44" r="6" fill="#ffb3ba" opacity=".35"/>
+        <path d="M40,52 Q46,58 52,52" fill="none" stroke="#222" stroke-width="1.8" stroke-linecap="round"/>
       </svg>
+
+      <!-- HUND unten-links, nervös mit Schweißtropfen -->
+      <svg class="a" style="bottom:-62px;left:-18px;width:90px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
+        <!-- Hängeohren -->
+        <ellipse cx="14" cy="50" rx="12" ry="26" fill="#d4a56a" stroke="#333" stroke-width="1.5" transform="rotate(-8,14,50)"/>
+        <ellipse cx="78" cy="50" rx="12" ry="26" fill="#d4a56a" stroke="#333" stroke-width="1.5" transform="rotate(8,78,50)"/>
+        <!-- Körper -->
+        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#d4a56a" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#e8c488"/>
+        <!-- Arme -->
+        <ellipse cx="10" cy="68" rx="9" ry="13" fill="#d4a56a" stroke="#333" stroke-width="1.5" transform="rotate(-12,10,68)"/>
+        <ellipse cx="82" cy="68" rx="9" ry="13" fill="#d4a56a" stroke="#333" stroke-width="1.5" transform="rotate(12,82,68)"/>
+        <!-- Füße -->
+        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#d4a56a" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#d4a56a" stroke="#333" stroke-width="1.5"/>
+        <!-- Kopf -->
+        <circle cx="46" cy="40" r="27" fill="#d4a56a" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="48" rx="15" ry="11" fill="#e8c488" stroke="#333" stroke-width="1"/>
+        <!-- Besorgte Augen -->
+        <circle cx="34" cy="36" r="6"  fill="#222"/>
+        <circle cx="58" cy="36" r="6"  fill="#222"/>
+        <circle cx="36" cy="34" r="2"  fill="white"/>
+        <circle cx="60" cy="34" r="2"  fill="white"/>
+        <!-- Hochgezogene Augenbrauen -->
+        <path d="M27,27 Q34,23 41,27" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M51,27 Q58,23 65,27" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round"/>
+        <ellipse cx="46" cy="46" rx="5" ry="3.5" fill="#222"/>
+        <circle cx="44" cy="44" r="1.5" fill="rgba(255,255,255,.4)"/>
+        <circle cx="24" cy="45" r="7" fill="#ffb3ba" opacity=".5"/>
+        <circle cx="68" cy="45" r="7" fill="#ffb3ba" opacity=".5"/>
+        <!-- Zitternder Mund -->
+        <path d="M38,55 Q42,52 46,55 Q50,58 54,55" fill="none" stroke="#222" stroke-width="1.8" stroke-linecap="round"/>
+        <!-- Schweißtropfen -->
+        <path d="M72,25 Q74,17 76,25 Q76,30 74,30 Q72,30 72,25Z" fill="#a8d8f0"/>
+        <path d="M80,34 Q81,29 83,34 Q83,37 81.5,37 Q80,37 80,34Z" fill="#a8d8f0"/>
+      </svg>
+
       <div class="card-body">
         <div class="progress">
           <div class="progress-step filled"></div>
@@ -343,87 +350,92 @@
   </div>
 
 
-  <!-- ══════════════════════════════════════════════════════════
-       SCREEN 2 · FRAGE 2 – Vibe / Umgebung
-       Maus (ordentlich malend) + Küken (Chaos, bekleckert)
-  ══════════════════════════════════════════════════════════ -->
+  <!-- ════════════════════════════════════════════════════════
+       SCREEN 2 · FRAGE 2 – Umgebung / Vibe
+       Maus oben-links (ordentlich) + Küken unten-rechts (Chaos)
+       FIX 3: "Dreck" → "Farbe"
+  ════════════════════════════════════════════════════════ -->
   <div class="screen" id="s2">
     <div class="card">
-      <svg class="scene" viewBox="0 0 320 145" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#f0fff4"/><stop offset="100%" stop-color="#fff0fb"/>
-          </linearGradient>
-        </defs>
-        <rect width="320" height="145" fill="url(#bg2)"/>
 
-        <!-- ── MAUS links (konzentriert, winziger Pinsel) ── -->
-        <g transform="translate(22,10)">
-          <ellipse cx="42" cy="118" rx="30" ry="18" fill="#c8c8c8"/>
-          <!-- Schürze -->
-          <path d="M24,98 Q42,112 60,98 L56,122 Q42,127 28,122Z" fill="white" opacity=".65"/>
-          <!-- Runde Ohren -->
-          <circle cx="14" cy="20" r="16" fill="#c8c8c8"/>
-          <circle cx="70" cy="20" r="16" fill="#c8c8c8"/>
-          <circle cx="14" cy="20" r="10" fill="#f0b0b8" opacity=".55"/>
-          <circle cx="70" cy="20" r="10" fill="#f0b0b8" opacity=".55"/>
-          <circle cx="42" cy="58" r="38" fill="#c8c8c8"/>
-          <ellipse cx="42" cy="70" rx="22" ry="14" fill="#d8d8d8"/>
-          <!-- Konzentrierte Augen (leicht zugekniffen) -->
-          <ellipse cx="28" cy="53" rx="7.5" ry="6"   fill="#1a1a1a"/>
-          <ellipse cx="56" cy="53" rx="7"   ry="5.5" fill="#1a1a1a"/>
-          <circle cx="31" cy="50" r="2.5" fill="white"/>
-          <circle cx="59" cy="50" r="2.5" fill="white"/>
-          <path d="M21,44 Q28,40 35,44" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"/>
-          <ellipse cx="42" cy="68" rx="4" ry="3" fill="#a0a0a0"/>
-          <circle cx="18" cy="68" r="7" fill="#ffb3ba" opacity=".4"/>
-          <circle cx="66" cy="68" r="7" fill="#ffb3ba" opacity=".4"/>
-          <path d="M36,77 Q42,82 48,77" fill="none" stroke="#1a1a1a" stroke-width="1.8" stroke-linecap="round"/>
-          <!-- Feiner Pinsel -->
-          <path d="M72,90 Q90,83 97,90" fill="none" stroke="#c8c8c8" stroke-width="10" stroke-linecap="round"/>
-          <rect  x="94" y="80" width="4"   height="20" rx="2"    fill="#6b4c14"/>
-          <ellipse cx="96" cy="78" rx="3" ry="7" fill="#e0e0e0"/>
-          <path  d="M93,73 Q96,70 99,73" fill="#c8a860"/>
-          <!-- Ordentliche Farbpunkte -->
-          <circle cx="110" cy="88" r="3.5" fill="#6b9fff" opacity=".9"/>
-          <circle cx="118" cy="82" r="3"   fill="#ff8fab" opacity=".9"/>
-          <circle cx="115" cy="93" r="2.5" fill="#9b59b6" opacity=".9"/>
-        </g>
-
-        <!-- ── KÜKEN rechts (kreatives Chaos, bekleckert) ── -->
-        <g transform="translate(186,8)">
-          <ellipse cx="40" cy="118" rx="30" ry="18" fill="#f5d030"/>
-          <!-- Farbkleckse auf Körper -->
-          <circle cx="32" cy="112" r="5.5" fill="#e74c3c" opacity=".65"/>
-          <circle cx="50" cy="119" r="4.5" fill="#3498db" opacity=".65"/>
-          <circle cx="40" cy="108" r="4"   fill="#9b59b6" opacity=".65"/>
-          <circle cx="40" cy="60"  r="40"  fill="#f5d030"/>
-          <!-- Farbkleckse im Gesicht -->
-          <circle cx="18" cy="48" r="7"  fill="#e74c3c" opacity=".6"/>
-          <circle cx="64" cy="54" r="5.5" fill="#3498db" opacity=".6"/>
-          <circle cx="54" cy="36" r="4.5" fill="#27ae60" opacity=".6"/>
-          <!-- Augen (aufgerissen, fröhlich) -->
-          <circle cx="27" cy="56" r="9"  fill="#1a1a1a"/>
-          <circle cx="55" cy="56" r="9"  fill="#1a1a1a"/>
-          <circle cx="30" cy="53" r="3.2" fill="white"/>
-          <circle cx="58" cy="53" r="3.2" fill="white"/>
-          <!-- Schnabel -->
-          <path d="M34,69 L40,76 L46,69Z" fill="#e07030"/>
-          <circle cx="15" cy="68" r="8" fill="#ffb3ba" opacity=".5"/>
-          <circle cx="65" cy="68" r="8" fill="#ffb3ba" opacity=".5"/>
-          <!-- Lachendes Maul -->
-          <path d="M31,79 Q40,88 49,79" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"/>
-          <!-- Großer Kleckser-Pinsel -->
-          <path d="M10,90 Q-6,79 -16,86" fill="none" stroke="#f5d030" stroke-width="12" stroke-linecap="round"/>
-          <rect x="-28" y="78" width="7" height="24" rx="3" fill="#6b4c14" transform="rotate(15,-24,90)"/>
-          <ellipse cx="-22" cy="76" rx="8" ry="11" fill="#ccc" transform="rotate(15,-22,76)"/>
-          <!-- Herumfliegende Farbtropfen -->
-          <circle cx="-42" cy="60" r="4.5" fill="#e74c3c" opacity=".7"/>
-          <circle cx="-50" cy="74" r="3.5" fill="#3498db" opacity=".7"/>
-          <circle cx="-36" cy="79" r="3"   fill="#f39c12" opacity=".7"/>
-          <circle cx="-56" cy="58" r="2.5" fill="#9b59b6" opacity=".6"/>
-        </g>
+      <!-- MAUS oben-links, konzentriert mit Pinsel -->
+      <svg class="a" style="top:-66px;left:-18px;width:90px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
+        <!-- Runde Ohren -->
+        <circle cx="22" cy="16" r="15" fill="#c8c8c8" stroke="#333" stroke-width="1.5"/>
+        <circle cx="70" cy="16" r="15" fill="#c8c8c8" stroke="#333" stroke-width="1.5"/>
+        <circle cx="22" cy="16" r="9"  fill="#f0b0b8" opacity=".55"/>
+        <circle cx="70" cy="16" r="9"  fill="#f0b0b8" opacity=".55"/>
+        <!-- Schürze -->
+        <path d="M26,74 Q46,85 66,74 L62,98 Q46,103 30,98Z" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+        <!-- Körper -->
+        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#c8c8c8" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#d8d8d8"/>
+        <!-- Arme -->
+        <ellipse cx="10" cy="68" rx="9" ry="13" fill="#c8c8c8" stroke="#333" stroke-width="1.5" transform="rotate(-12,10,68)"/>
+        <!-- rechter Arm (hält winzigen Pinsel) -->
+        <ellipse cx="82" cy="60" rx="9" ry="13" fill="#c8c8c8" stroke="#333" stroke-width="1.5" transform="rotate(-30,82,60)"/>
+        <!-- Füße -->
+        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#c8c8c8" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#c8c8c8" stroke="#333" stroke-width="1.5"/>
+        <!-- Schwanz -->
+        <path d="M80,90 Q100,82 100,70 Q100,56 88,52" fill="none" stroke="#c8c8c8" stroke-width="5" stroke-linecap="round"/>
+        <path d="M80,90 Q100,82 100,70 Q100,56 88,52" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Kopf -->
+        <circle cx="46" cy="40" r="27" fill="#c8c8c8" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="47" rx="14" ry="10" fill="#d8d8d8" stroke="#333" stroke-width="1"/>
+        <!-- Konzentrierte Augen (ein Auge zugekniffen) -->
+        <ellipse cx="34" cy="36" rx="6"   ry="5"   fill="#222"/>
+        <ellipse cx="58" cy="36" rx="5.5" ry="4.5" fill="#222"/>
+        <circle  cx="36" cy="34" r="2"   fill="white"/>
+        <circle  cx="60" cy="34" r="2"   fill="white"/>
+        <path d="M27,28 Q34,24 41,28" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round"/>
+        <ellipse cx="46" cy="45" rx="3" ry="2" fill="#a0a0a0"/>
+        <circle cx="26" cy="44" r="6" fill="#ffb3ba" opacity=".4"/>
+        <circle cx="66" cy="44" r="6" fill="#ffb3ba" opacity=".4"/>
+        <path d="M41,51 Q46,56 51,51" fill="none" stroke="#222" stroke-width="1.8" stroke-linecap="round"/>
+        <!-- Kleiner Pinsel -->
+        <rect x="88" y="43" width="4" height="20" rx="2" fill="#6b4c14"/>
+        <ellipse cx="90" cy="41" rx="3" ry="7" fill="#e0e0e0"/>
+        <ellipse cx="90" cy="37" rx="2.5" ry="2" fill="#9b59b6"/>
       </svg>
+
+      <!-- KÜKEN unten-rechts, bekleckert -->
+      <svg class="a" style="bottom:-62px;right:-18px;width:90px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
+        <!-- Körper -->
+        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#f5d030" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#fff3cd"/>
+        <!-- Farbkleckse auf Körper -->
+        <circle cx="36" cy="76" r="6"   fill="#e74c3c" opacity=".65"/>
+        <circle cx="56" cy="83" r="5"   fill="#3498db" opacity=".65"/>
+        <circle cx="46" cy="70" r="4.5" fill="#9b59b6" opacity=".65"/>
+        <!-- Flügel-Arme -->
+        <ellipse cx="10" cy="70" rx="10" ry="14" fill="#f5d030" stroke="#333" stroke-width="1.5" transform="rotate(-18,10,70)"/>
+        <ellipse cx="82" cy="70" rx="10" ry="14" fill="#f5d030" stroke="#333" stroke-width="1.5" transform="rotate(18,82,70)"/>
+        <!-- Füße -->
+        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#f5d030" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#f5d030" stroke="#333" stroke-width="1.5"/>
+        <!-- Kopf -->
+        <circle cx="46" cy="40" r="28" fill="#f5d030" stroke="#333" stroke-width="1.5"/>
+        <!-- Farbkleckse im Gesicht -->
+        <circle cx="22" cy="32" r="7"   fill="#e74c3c" opacity=".55"/>
+        <circle cx="68" cy="36" r="5.5" fill="#3498db" opacity=".55"/>
+        <!-- Aufgerissene Augen (Spaß) -->
+        <circle cx="34" cy="36" r="7"   fill="#222"/>
+        <circle cx="58" cy="36" r="7"   fill="#222"/>
+        <circle cx="36" cy="33" r="2.5" fill="white"/>
+        <circle cx="60" cy="33" r="2.5" fill="white"/>
+        <!-- Schnabel -->
+        <path d="M39,46 L46,53 L53,46Z" fill="#e07030" stroke="#333" stroke-width="1"/>
+        <circle cx="24" cy="45" r="7" fill="#ffb3ba" opacity=".5"/>
+        <circle cx="68" cy="45" r="7" fill="#ffb3ba" opacity=".5"/>
+        <!-- Lachendes Maul -->
+        <path d="M35,56 Q46,66 57,56" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round"/>
+        <!-- Fliegende Farbtropfen -->
+        <circle cx="-8"  cy="50" r="5"  fill="#e74c3c" opacity=".7"/>
+        <circle cx="-16" cy="66" r="4"  fill="#3498db" opacity=".7"/>
+        <circle cx="-4"  cy="72" r="3"  fill="#f39c12" opacity=".7"/>
+      </svg>
+
       <div class="card-body">
         <div class="progress">
           <div class="progress-step filled"></div>
@@ -432,9 +444,10 @@
           <div class="progress-step"></div>
         </div>
         <p class="q-label">Frage 2 von 4</p>
+        <!-- FIX 3: "Dreck" → "Farbe" -->
         <p class="q-text">
           Wir brauchen eine Umgebung, in der es okay ist, wenn wir
-          uns mit „Dreck" beschmutzen. Welcher Vibe passt zu uns?
+          uns mit Farbe beschmutzen. Welcher Vibe passt zu uns?
         </p>
         <div class="options">
           <button class="opt" onclick="goTo('s3')">🧘 Stille, konzentrierte Umgebung</button>
@@ -445,102 +458,98 @@
   </div>
 
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- ════════════════════════════════════════════════════════
        SCREEN 3 · FRAGE 3 – Feinmotorik
-       Fuchs (malt präzise kleine Blume) + Schwein (Pinsel-Chaos)
-  ══════════════════════════════════════════════════════════ -->
+       Fuchs oben-rechts (präziser Pinsel) + Schwein unten-links (Chaos)
+  ════════════════════════════════════════════════════════ -->
   <div class="screen" id="s3">
     <div class="card">
-      <svg class="scene" viewBox="0 0 320 145" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bg3" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#fffbe0"/><stop offset="100%" stop-color="#f0e8ff"/>
-          </linearGradient>
-        </defs>
-        <rect width="320" height="145" fill="url(#bg3)"/>
 
-        <!-- ── FUCHS links (hochkonzentriert, winziger Pinsel) ── -->
-        <g transform="translate(18,8)">
-          <ellipse cx="46" cy="118" rx="30" ry="18" fill="#e07845"/>
-          <!-- Schwanz -->
-          <path d="M64,108 Q88,97 90,112 Q88,122 74,120" fill="#e07845"/>
-          <path d="M66,111 Q84,102 86,113 Q84,120 74,118" fill="white" opacity=".55"/>
-          <!-- Spitze Ohren -->
-          <polygon points="14,28 4,2 32,18"  fill="#e07845"/>
-          <polygon points="78,28 88,2 60,18" fill="#e07845"/>
-          <polygon points="16,26 8,6 30,18"  fill="#c0401a"/>
-          <polygon points="76,26 82,6 62,18" fill="#c0401a"/>
-          <circle cx="46" cy="60" r="40" fill="#e07845"/>
-          <ellipse cx="46" cy="73" rx="26" ry="18" fill="#f8f0e8"/>
-          <!-- Konzentrierte Augen (eines leicht zugekniffen) -->
-          <ellipse cx="31" cy="53" rx="8"   ry="7" fill="#1a1a1a"/>
-          <ellipse cx="61" cy="53" rx="7.5" ry="5" fill="#1a1a1a"/>
-          <circle cx="34" cy="50" r="2.5" fill="white"/>
-          <circle cx="64" cy="50" r="2.2" fill="white"/>
-          <path d="M23,43 Q31,39 39,43" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
-          <ellipse cx="46" cy="70" rx="5" ry="3.5" fill="#1a1a1a"/>
-          <circle cx="20" cy="72" r="8" fill="#ffb3ba" opacity=".45"/>
-          <circle cx="72" cy="72" r="8" fill="#ffb3ba" opacity=".45"/>
-          <!-- Herausgestreckte Zunge vor Konzentration -->
-          <path d="M40,80 Q46,86 52,80" fill="#ffb3ba"/>
-          <!-- Winziger Präzisionspinsel -->
-          <path d="M80,92 Q98,85 104,92" fill="none" stroke="#e07845" stroke-width="10" stroke-linecap="round"/>
-          <rect  x="101" y="81" width="3.5" height="22" rx="1.8" fill="#5c3a10"/>
-          <ellipse cx="102.7" cy="79" rx="2.8" ry="7" fill="#d8d8d8"/>
-          <path  d="M100.5,74 Q102.7,71 104.9,74" fill="#b88840"/>
-          <!-- Lilane Farbe am Spitz -->
-          <ellipse cx="102.7" cy="73" rx="2.5" ry="2" fill="#9b59b6"/>
-          <!-- Kleines Keramikgefäß -->
-          <path d="M114,79 Q116,76 128,76 Q140,76 142,79 Q144,87 142,98 Q138,104 128,104 Q118,104 114,98 Q112,87 114,79Z" fill="#d4b896" stroke="#b89870" stroke-width="1.2"/>
-          <!-- Blume drauf (vom Fuchs gemalt) -->
-          <circle cx="128" cy="90" r="4"   fill="#ff8fab"/>
-          <circle cx="128" cy="86" r="2.5" fill="#ff8fab"/>
-          <circle cx="131" cy="90" r="2.5" fill="#ff8fab"/>
-          <circle cx="128" cy="94" r="2.5" fill="#ff8fab"/>
-          <circle cx="125" cy="90" r="2.5" fill="#ff8fab"/>
-          <circle cx="128" cy="90" r="2.5" fill="white"/>
-        </g>
-
-        <!-- ── SCHWEIN rechts (überraschtes Chaos) ── -->
-        <g transform="translate(186,10)">
-          <ellipse cx="40" cy="118" rx="32" ry="18" fill="#ffb7c5"/>
-          <circle cx="40" cy="118" r="5"  fill="#3498db" opacity=".5"/>
-          <circle cx="54" cy="114" r="4"  fill="#27ae60" opacity=".5"/>
-          <!-- Runde Ohren -->
-          <circle cx="13" cy="23" r="16" fill="#ffb7c5"/>
-          <circle cx="67" cy="23" r="16" fill="#ffb7c5"/>
-          <circle cx="13" cy="23" r="10" fill="#ff8fab" opacity=".55"/>
-          <circle cx="67" cy="23" r="10" fill="#ff8fab" opacity=".55"/>
-          <circle cx="40" cy="60" r="38" fill="#ffb7c5"/>
-          <!-- Farbkleckse im Gesicht -->
-          <circle cx="17" cy="50" r="7"  fill="#3498db" opacity=".55"/>
-          <circle cx="65" cy="44" r="5"  fill="#f39c12" opacity=".55"/>
-          <circle cx="56" cy="71" r="4"  fill="#27ae60" opacity=".55"/>
-          <!-- Schnauze -->
-          <ellipse cx="40" cy="73" rx="18" ry="13" fill="#ff8fab" opacity=".65"/>
-          <circle cx="34" cy="73" r="4" fill="#d06070" opacity=".45"/>
-          <circle cx="46" cy="73" r="4" fill="#d06070" opacity=".45"/>
-          <!-- Überraschte Augen (groß & rund) -->
-          <circle cx="25" cy="55" r="10" fill="white"/>
-          <circle cx="55" cy="55" r="10" fill="white"/>
-          <circle cx="27" cy="57" r="7"  fill="#1a1a1a"/>
-          <circle cx="57" cy="57" r="7"  fill="#1a1a1a"/>
-          <circle cx="29" cy="55" r="2.5" fill="white"/>
-          <circle cx="59" cy="55" r="2.5" fill="white"/>
-          <!-- O-Mund (überrascht) -->
-          <circle cx="40" cy="83" r="6" fill="#1a1a1a"/>
-          <!-- Arm mit wildem, triefenden Pinsel -->
-          <path d="M10,92 Q-8,73 -18,80" fill="none" stroke="#ffb7c5" stroke-width="12" stroke-linecap="round"/>
-          <rect x="-30" y="70" width="8" height="28" rx="3" fill="#6b4c14" transform="rotate(-18,-26,85)"/>
-          <ellipse cx="-26" cy="68" rx="9" ry="12" fill="#c0c0c0" transform="rotate(-18,-26,68)"/>
-          <!-- Farbtropfen herumfliegend -->
-          <circle cx="-48" cy="56" r="5"  fill="#e74c3c" opacity=".65"/>
-          <circle cx="-56" cy="70" r="3.5" fill="#9b59b6" opacity=".65"/>
-          <circle cx="-42" cy="48" r="3"  fill="#27ae60" opacity=".65"/>
-          <path d="M-40,60 Q-38,54 -40,64" fill="#3498db" opacity=".7"/>
-          <path d="M-34,52 Q-32,46 -34,56" fill="#e74c3c" opacity=".7"/>
-        </g>
+      <!-- FUCHS oben-rechts, winziger Pinsel -->
+      <svg class="a" style="top:-66px;right:-18px;width:92px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
+        <!-- Spitze Ohren -->
+        <polygon points="18,24 8,2 34,16"  fill="#e07845" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+        <polygon points="74,24 84,2 58,16" fill="#e07845" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+        <polygon points="20,22 12,6 32,16" fill="#c0401a"/>
+        <polygon points="72,22 80,6 60,16" fill="#c0401a"/>
+        <!-- Schwanz (hinter Körper) -->
+        <path d="M72,82 Q96,70 98,86 Q96,98 80,96" fill="#e07845" stroke="#333" stroke-width="1.5"/>
+        <path d="M74,85 Q92,75 94,87 Q92,96 80,94" fill="white" opacity=".6"/>
+        <!-- Körper -->
+        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#e07845" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="80" rx="22" ry="18" fill="#f8f0e8"/>
+        <!-- Arme -->
+        <ellipse cx="10" cy="68" rx="9" ry="13" fill="#e07845" stroke="#333" stroke-width="1.5" transform="rotate(-12,10,68)"/>
+        <!-- rechter Arm (hält winzigen Pinsel, konzentriert) -->
+        <ellipse cx="82" cy="60" rx="9" ry="13" fill="#e07845" stroke="#333" stroke-width="1.5" transform="rotate(-32,82,60)"/>
+        <!-- Füße -->
+        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#e07845" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#e07845" stroke="#333" stroke-width="1.5"/>
+        <!-- Kopf -->
+        <circle cx="46" cy="40" r="27" fill="#e07845" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="48" rx="16" ry="12" fill="#f8f0e8" stroke="#333" stroke-width="1"/>
+        <!-- Konzentrierte Augen -->
+        <ellipse cx="34" cy="36" rx="6"   ry="5.5" fill="#222"/>
+        <ellipse cx="58" cy="36" rx="5.5" ry="4.5" fill="#222"/>
+        <circle  cx="36" cy="34" r="2"   fill="white"/>
+        <circle  cx="60" cy="34" r="2"   fill="white"/>
+        <path d="M26,27 Q34,23 42,27" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round"/>
+        <ellipse cx="46" cy="46" rx="4" ry="2.5" fill="#222"/>
+        <circle cx="24" cy="45" r="6.5" fill="#ffb3ba" opacity=".45"/>
+        <circle cx="68" cy="45" r="6.5" fill="#ffb3ba" opacity=".45"/>
+        <!-- Zunge (Konzentration) -->
+        <path d="M40,53 Q46,59 52,53" fill="#ffb3ba"/>
+        <!-- Pinsel -->
+        <rect x="88" y="38" width="4" height="22" rx="2" fill="#5c3a10"/>
+        <ellipse cx="90" cy="36" rx="3" ry="7" fill="#d8d8d8"/>
+        <ellipse cx="90" cy="31" rx="2.5" ry="2" fill="#9b59b6"/>
       </svg>
+
+      <!-- SCHWEIN unten-links, überrascht mit Farb-Chaos -->
+      <svg class="a" style="bottom:-62px;left:-18px;width:90px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
+        <!-- Runde Ohren -->
+        <circle cx="22" cy="16" r="14" fill="#ffb7c5" stroke="#333" stroke-width="1.5"/>
+        <circle cx="70" cy="16" r="14" fill="#ffb7c5" stroke="#333" stroke-width="1.5"/>
+        <circle cx="22" cy="16" r="8.5" fill="#ff8fab" opacity=".55"/>
+        <circle cx="70" cy="16" r="8.5" fill="#ff8fab" opacity=".55"/>
+        <!-- Körper -->
+        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#ffb7c5" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#ffd4de"/>
+        <!-- Farbtupfer auf Körper -->
+        <circle cx="36" cy="76" r="5.5" fill="#3498db" opacity=".55"/>
+        <circle cx="58" cy="82" r="5"   fill="#27ae60" opacity=".55"/>
+        <!-- Arme -->
+        <ellipse cx="10" cy="68" rx="9" ry="13" fill="#ffb7c5" stroke="#333" stroke-width="1.5" transform="rotate(-12,10,68)"/>
+        <!-- rechter Arm hält Pinsel (wild) -->
+        <ellipse cx="82" cy="60" rx="9" ry="13" fill="#ffb7c5" stroke="#333" stroke-width="1.5" transform="rotate(-28,82,60)"/>
+        <!-- Füße -->
+        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#ffb7c5" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#ffb7c5" stroke="#333" stroke-width="1.5"/>
+        <!-- Kopf -->
+        <circle cx="46" cy="40" r="27" fill="#ffb7c5" stroke="#333" stroke-width="1.5"/>
+        <!-- Farb-Kleckse im Gesicht -->
+        <circle cx="20" cy="30" r="7"   fill="#3498db" opacity=".5"/>
+        <circle cx="70" cy="26" r="5"   fill="#f39c12" opacity=".5"/>
+        <!-- Schnauze -->
+        <ellipse cx="46" cy="48" rx="16" ry="12" fill="#ff8fab" opacity=".65" stroke="#333" stroke-width="1"/>
+        <circle cx="39" cy="48" r="4" fill="#d06070" opacity=".45"/>
+        <circle cx="53" cy="48" r="4" fill="#d06070" opacity=".45"/>
+        <!-- Überraschte Augen (groß & rund) -->
+        <circle cx="33" cy="36" r="8"   fill="white" stroke="#222" stroke-width="1.2"/>
+        <circle cx="59" cy="36" r="8"   fill="white" stroke="#222" stroke-width="1.2"/>
+        <circle cx="35" cy="38" r="5.5" fill="#222"/>
+        <circle cx="61" cy="38" r="5.5" fill="#222"/>
+        <circle cx="36" cy="36" r="2"   fill="white"/>
+        <circle cx="62" cy="36" r="2"   fill="white"/>
+        <!-- Überraschter O-Mund -->
+        <circle cx="46" cy="57" r="5.5" fill="#222"/>
+        <!-- Wilder Pinsel + Farbtropfen -->
+        <rect x="84" y="38" width="6" height="24" rx="3" fill="#6b4c14" transform="rotate(-15,87,50)"/>
+        <ellipse cx="88" cy="36" rx="7" ry="10" fill="#c0c0c0" transform="rotate(-15,88,36)"/>
+        <circle cx="96" cy="22" r="5"  fill="#e74c3c" opacity=".7"/>
+        <circle cx="104" cy="34" r="4" fill="#9b59b6" opacity=".7"/>
+      </svg>
+
       <div class="card-body">
         <div class="progress">
           <div class="progress-step filled"></div>
@@ -559,102 +568,101 @@
   </div>
 
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- ════════════════════════════════════════════════════════
        SCREEN 4 · FRAGE 4 – Kino vs. Essen
-       Hase (schläfriger Popcorn-Koma) + Bär (riesiger Hunger, Besteck)
-  ══════════════════════════════════════════════════════════ -->
+       Hase oben-links (Popcorn) + Bär unten-rechts (Hunger)
+  ════════════════════════════════════════════════════════ -->
   <div class="screen" id="s4">
     <div class="card">
-      <svg class="scene" viewBox="0 0 320 145" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bg4" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#1a1a3e"/><stop offset="100%" stop-color="#2a1a40"/>
-          </linearGradient>
-        </defs>
-        <rect width="320" height="145" fill="url(#bg4)"/>
-        <!-- Kino-Sterne -->
-        <circle cx="40"  cy="20" r="1.5" fill="white" opacity=".5"/>
-        <circle cx="75"  cy="10" r="1"   fill="white" opacity=".4"/>
-        <circle cx="160" cy="15" r="1.5" fill="white" opacity=".5"/>
-        <circle cx="240" cy="8"  r="1"   fill="white" opacity=".4"/>
-        <circle cx="290" cy="22" r="1.5" fill="white" opacity=".5"/>
-        <circle cx="110" cy="25" r="1"   fill="white" opacity=".3"/>
-        <circle cx="200" cy="28" r="1.2" fill="white" opacity=".4"/>
 
-        <!-- ── HASE links (schläfrig, Popcorn) ── -->
-        <g transform="translate(18,8)">
-          <!-- Müde Ohren (hängen etwas) -->
-          <ellipse cx="22" cy="6"  rx="11" ry="26" fill="#f0ece8" transform="rotate(-6,22,6)"/>
-          <ellipse cx="62" cy="4"  rx="11" ry="26" fill="#f0ece8" transform="rotate(4,62,4)"/>
-          <ellipse cx="22" cy="6"  rx="6.5" ry="19" fill="#ffc8d0" opacity=".65" transform="rotate(-6,22,6)"/>
-          <ellipse cx="62" cy="4"  rx="6.5" ry="19" fill="#ffc8d0" opacity=".65" transform="rotate(4,62,4)"/>
-          <ellipse cx="42" cy="116" rx="30" ry="18" fill="#f0ece8"/>
-          <circle cx="42" cy="62" r="38" fill="#f0ece8"/>
-          <!-- Halbgeschlossene Augen (schläfrig) -->
-          <circle cx="27" cy="57" r="8" fill="#1a1a1a"/>
-          <rect   x="19" y="50" width="16" height="8" rx="3" fill="#f0ece8"/>
-          <circle cx="29" cy="55" r="2.5" fill="white"/>
-          <circle cx="57" cy="57" r="8" fill="#1a1a1a"/>
-          <rect   x="49" y="50" width="16" height="8" rx="3" fill="#f0ece8"/>
-          <circle cx="59" cy="55" r="2.5" fill="white"/>
-          <ellipse cx="42" cy="68" rx="18" ry="12" fill="#e8ddd8"/>
-          <ellipse cx="42" cy="66" rx="3.5" ry="2.5" fill="#ffb3ba"/>
-          <circle cx="18" cy="70" r="8" fill="#ffb3ba" opacity=".5"/>
-          <circle cx="66" cy="70" r="8" fill="#ffb3ba" opacity=".5"/>
-          <path d="M36,74 Q42,80 48,74" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
-          <!-- ZZZ -->
-          <text x="66" y="44" font-size="11" fill="#a0aec0" opacity=".7">z</text>
-          <text x="75" y="35" font-size="15" fill="#a0aec0" opacity=".7">z</text>
-          <!-- Arm mit Popcorn -->
-          <path d="M72,96 Q92,88 100,96" fill="none" stroke="#f0ece8" stroke-width="11" stroke-linecap="round"/>
-          <!-- Popcorn-Box -->
-          <path d="M96,79 L101,112 L122,112 L127,79Z" fill="#e63946"/>
-          <line x1="103" y1="79" x2="100" y2="112" stroke="white" stroke-width="2" opacity=".5"/>
-          <line x1="111" y1="79" x2="111" y2="112" stroke="white" stroke-width="2" opacity=".5"/>
-          <line x1="119" y1="79" x2="122" y2="112" stroke="white" stroke-width="2" opacity=".5"/>
-          <!-- Popcorn oben -->
-          <circle cx="101" cy="75" r="6.5" fill="#fff3cd"/>
-          <circle cx="111" cy="70" r="7.5" fill="#fff3cd"/>
-          <circle cx="121" cy="74" r="6.5" fill="#fff3cd"/>
-          <circle cx="106" cy="67" r="5.5" fill="#fff3cd"/>
-          <circle cx="116" cy="67" r="5.5" fill="#fff3cd"/>
-        </g>
-
-        <!-- ── BÄR rechts (hungrig, Messer & Gabel) ── -->
-        <g transform="translate(186,8)">
-          <ellipse cx="46" cy="116" rx="32" ry="18" fill="#c4856a"/>
-          <circle cx="13" cy="19" r="13" fill="#c4856a"/>
-          <circle cx="79" cy="19" r="13" fill="#c4856a"/>
-          <circle cx="13" cy="19" r="8"  fill="#a06548"/>
-          <circle cx="79" cy="19" r="8"  fill="#a06548"/>
-          <circle cx="46" cy="56" r="40" fill="#c4856a"/>
-          <ellipse cx="46" cy="68" rx="22" ry="15" fill="#e8c4a0"/>
-          <!-- Funkelnde hungrige Augen -->
-          <circle cx="30" cy="50" r="9.5" fill="#1a1a1a"/>
-          <circle cx="62" cy="50" r="9.5" fill="#1a1a1a"/>
-          <circle cx="33" cy="47" r="3.5" fill="white"/>
-          <circle cx="65" cy="47" r="3.5" fill="white"/>
-          <circle cx="37" cy="55" r="1.5" fill="white" opacity=".7"/>
-          <circle cx="69" cy="55" r="1.5" fill="white" opacity=".7"/>
-          <ellipse cx="46" cy="66" rx="5" ry="3.5" fill="#1a1a1a"/>
-          <circle cx="18" cy="70" r="10" fill="#ffb3ba" opacity=".55"/>
-          <circle cx="74" cy="70" r="10" fill="#ffb3ba" opacity=".55"/>
-          <!-- Offener hungriger Mund -->
-          <path d="M32,79 Q46,92 60,79" fill="#cc4444"/>
-          <path d="M32,79 Q46,92 60,79" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"/>
-          <!-- Sabber-Tropfen -->
-          <path d="M44,91 Q44,98 46,99 Q48,98 48,91" fill="#a8d8f0" opacity=".7"/>
-          <!-- Linker Arm + Messer -->
-          <path d="M12,94 Q-6,82 -12,88" fill="none" stroke="#c4856a" stroke-width="11" stroke-linecap="round"/>
-          <rect x="-17" y="72" width="4.5" height="26" rx="2.2" fill="#d0d0d0"/>
-          <path d="-15,72 L-15,66" stroke="#d0d0d0" stroke-width="3"/>
-          <!-- Rechter Arm + Gabel -->
-          <path d="M80,94 Q98,82 104,88" fill="none" stroke="#c4856a" stroke-width="11" stroke-linecap="round"/>
-          <line x1="101" y1="66" x2="101" y2="90" stroke="#d0d0d0" stroke-width="2.5"/>
-          <line x1="97"  y1="66" x2="97"  y2="75" stroke="#d0d0d0" stroke-width="2"/>
-          <line x1="105" y1="66" x2="105" y2="75" stroke="#d0d0d0" stroke-width="2"/>
-        </g>
+      <!-- HASE oben-links, Popcorn & schläfrig -->
+      <svg class="a" style="top:-66px;left:-18px;width:90px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
+        <!-- Ohren (leicht hängend – müde) -->
+        <ellipse cx="30" cy="6"  rx="11" ry="24" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(-6,30,6)"/>
+        <ellipse cx="64" cy="4"  rx="11" ry="24" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(4,64,4)"/>
+        <ellipse cx="30" cy="6"  rx="6.5" ry="17" fill="#ffc8d0"/>
+        <ellipse cx="64" cy="4"  rx="6.5" ry="17" fill="#ffc8d0"/>
+        <!-- Körper -->
+        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#ede5de"/>
+        <!-- Arme -->
+        <ellipse cx="10" cy="68" rx="9" ry="13" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(-12,10,68)"/>
+        <!-- rechter Arm (hält Popcorn) -->
+        <ellipse cx="82" cy="62" rx="9" ry="13" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(-26,82,62)"/>
+        <!-- Füße -->
+        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <!-- Kopf -->
+        <circle cx="46" cy="42" r="27" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="49" rx="13" ry="9" fill="#ede5de" stroke="#333" stroke-width="1"/>
+        <!-- Halbgeschlossene Augen (müde) -->
+        <circle cx="34" cy="38" r="6.5" fill="#222"/>
+        <rect   x="27" y="31" width="14" height="8" rx="3" fill="#f5f0ec"/>
+        <circle cx="36" cy="37" r="2.2" fill="white"/>
+        <circle cx="58" cy="38" r="6.5" fill="#222"/>
+        <rect   x="51" y="31" width="14" height="8" rx="3" fill="#f5f0ec"/>
+        <circle cx="60" cy="37" r="2.2" fill="white"/>
+        <ellipse cx="46" cy="47" rx="3" ry="2" fill="#ffb3ba"/>
+        <circle cx="26" cy="46" r="7" fill="#ffb3ba" opacity=".5"/>
+        <circle cx="66" cy="46" r="7" fill="#ffb3ba" opacity=".5"/>
+        <path d="M40,54 Q46,59 52,54" fill="none" stroke="#222" stroke-width="1.8" stroke-linecap="round"/>
+        <!-- ZZZ -->
+        <text x="68" y="30" font-size="11" fill="#a0aec0" opacity=".7">z</text>
+        <text x="77" y="20" font-size="15" fill="#a0aec0" opacity=".7">z</text>
+        <!-- Popcorn-Box -->
+        <path d="M86,44 L90,72 L106,72 L110,44Z" fill="#e63946" stroke="#333" stroke-width="1.2"/>
+        <line x1="91" y1="44" x2="88" y2="72" stroke="white" stroke-width="1.8" opacity=".55"/>
+        <line x1="98" y1="44" x2="98" y2="72" stroke="white" stroke-width="1.8" opacity=".55"/>
+        <line x1="105" y1="44" x2="108" y2="72" stroke="white" stroke-width="1.8" opacity=".55"/>
+        <circle cx="90" cy="40" r="6"   fill="#fff3cd"/>
+        <circle cx="98" cy="36" r="7"   fill="#fff3cd"/>
+        <circle cx="106" cy="40" r="6"  fill="#fff3cd"/>
+        <circle cx="94" cy="33" r="5"   fill="#fff3cd"/>
+        <circle cx="102" cy="33" r="5"  fill="#fff3cd"/>
       </svg>
+
+      <!-- BÄR unten-rechts, hungrig mit Besteck -->
+      <svg class="a" style="bottom:-62px;right:-18px;width:92px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
+        <!-- Ohren -->
+        <circle cx="22" cy="14" r="13" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <circle cx="22" cy="14" r="8"  fill="#a06548"/>
+        <circle cx="70" cy="14" r="13" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <circle cx="70" cy="14" r="8"  fill="#a06548"/>
+        <!-- Körper -->
+        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#e8c4a0"/>
+        <!-- Arme (beide hoch mit Besteck) -->
+        <ellipse cx="10" cy="58" rx="9" ry="13" fill="#c4856a" stroke="#333" stroke-width="1.5" transform="rotate(-35,10,58)"/>
+        <ellipse cx="82" cy="58" rx="9" ry="13" fill="#c4856a" stroke="#333" stroke-width="1.5" transform="rotate(35,82,58)"/>
+        <!-- Füße -->
+        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <!-- Kopf -->
+        <circle cx="46" cy="38" r="27" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="44" rx="14" ry="10" fill="#e8c4a0" stroke="#333" stroke-width="1"/>
+        <!-- Große hungrige Augen -->
+        <circle cx="34" cy="33" r="7"   fill="#222"/>
+        <circle cx="58" cy="33" r="7"   fill="#222"/>
+        <circle cx="36" cy="30" r="2.8" fill="white"/>
+        <circle cx="60" cy="30" r="2.8" fill="white"/>
+        <circle cx="40" cy="37" r="1.5" fill="white" opacity=".6"/>
+        <circle cx="64" cy="37" r="1.5" fill="white" opacity=".6"/>
+        <ellipse cx="46" cy="42" rx="3.5" ry="2.5" fill="#222"/>
+        <circle cx="24" cy="42" r="8" fill="#ffb3ba" opacity=".55"/>
+        <circle cx="68" cy="42" r="8" fill="#ffb3ba" opacity=".55"/>
+        <!-- Großer hungriger Mund + Sabber -->
+        <path d="M32,50 Q46,62 60,50" fill="#cc4444"/>
+        <path d="M32,50 Q46,62 60,50" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round"/>
+        <path d="M44,62 Q44,68 46,69 Q48,68 48,62" fill="#a8d8f0" opacity=".7"/>
+        <!-- Messer links -->
+        <rect x="-4" y="38" width="4" height="24" rx="2" fill="#d0d0d0" stroke="#888" stroke-width="1"/>
+        <rect x="-4" y="38" width="4" height="8"  rx="1" fill="#888"/>
+        <!-- Gabel rechts -->
+        <line x1="96" y1="37" x2="96" y2="60" stroke="#d0d0d0" stroke-width="3" stroke-linecap="round"/>
+        <line x1="92" y1="37" x2="92" y2="48" stroke="#d0d0d0" stroke-width="2" stroke-linecap="round"/>
+        <line x1="100" y1="37" x2="100" y2="48" stroke="#d0d0d0" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+
       <div class="card-body">
         <div class="progress">
           <div class="progress-step filled"></div>
@@ -676,88 +684,90 @@
   </div>
 
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- ════════════════════════════════════════════════════════
        SCREEN 5 · ESSEN UNTERMENÜ
-       Frosch (Sushi) + Katze (Pizza)
-  ══════════════════════════════════════════════════════════ -->
+       Frosch oben-links (Sushi) + Katze unten-rechts (Pizza)
+  ════════════════════════════════════════════════════════ -->
   <div class="screen" id="s5">
     <div class="card">
-      <svg class="scene" viewBox="0 0 320 145" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bg5" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#f0fff4"/><stop offset="100%" stop-color="#fff8e0"/>
-          </linearGradient>
-        </defs>
-        <rect width="320" height="145" fill="url(#bg5)"/>
-        <text x="157" y="60" text-anchor="middle" font-size="22" fill="#f39c12" opacity=".25">🍽</text>
 
-        <!-- ── FROSCH links (Sushi + Stäbchen) ── -->
-        <g transform="translate(20,10)">
-          <ellipse cx="46" cy="118" rx="34" ry="17" fill="#6db85c"/>
-          <!-- Frosch-Augen oben auf dem Kopf -->
-          <circle cx="24" cy="22" r="16" fill="#6db85c"/>
-          <circle cx="68" cy="22" r="16" fill="#6db85c"/>
-          <circle cx="24" cy="22" r="10" fill="white"/>
-          <circle cx="68" cy="22" r="10" fill="white"/>
-          <circle cx="26" cy="24" r="7"  fill="#1a1a1a"/>
-          <circle cx="70" cy="24" r="7"  fill="#1a1a1a"/>
-          <circle cx="28" cy="22" r="2.5" fill="white"/>
-          <circle cx="72" cy="22" r="2.5" fill="white"/>
-          <ellipse cx="46" cy="68" rx="40" ry="36" fill="#6db85c"/>
-          <!-- Breites Froschmaul -->
-          <path d="M18,80 Q46,98 74,80" fill="#3a9030"/>
-          <path d="M18,80 Q46,98 74,80" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
-          <circle cx="16" cy="74" r="8" fill="#ffb3ba" opacity=".4"/>
-          <circle cx="76" cy="74" r="8" fill="#ffb3ba" opacity=".4"/>
-          <!-- ♡ -->
-          <text x="85" y="46" font-size="13" fill="#ff8fab" opacity=".9">♡</text>
-          <!-- Arm mit Stäbchen + Sushi -->
-          <path d="M80,98 Q98,88 106,95" fill="none" stroke="#6db85c" stroke-width="11" stroke-linecap="round"/>
-          <!-- Stäbchen -->
-          <line x1="102" y1="73" x2="118" y2="94" stroke="#6b4c14" stroke-width="2.5" stroke-linecap="round"/>
-          <line x1="107" y1="69" x2="122" y2="92" stroke="#6b4c14" stroke-width="2.5" stroke-linecap="round"/>
-          <!-- Sushi-Rolle -->
-          <rect  x="108" y="59" width="24" height="12" rx="4" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
-          <rect  x="108" y="59" width="24" height="3"  rx="1.5" fill="#2d2d2d"/>
-          <rect  x="108" y="68" width="24" height="3"  rx="1.5" fill="#2d2d2d"/>
-          <ellipse cx="120" cy="63" rx="9" ry="4" fill="#ff8c69"/>
-        </g>
-
-        <!-- ── KATZE rechts (Pizza-Stück) ── -->
-        <g transform="translate(186,10)">
-          <ellipse cx="40" cy="118" rx="30" ry="17" fill="#b8c0cc"/>
-          <polygon points="10,26 2,4 26,16"  fill="#b8c0cc"/>
-          <polygon points="70,26 78,4 54,16" fill="#b8c0cc"/>
-          <polygon points="13,24 7,8 24,16"  fill="#ffc8d0"/>
-          <polygon points="67,24 73,8 56,16" fill="#ffc8d0"/>
-          <circle cx="40" cy="62" r="38" fill="#b8c0cc"/>
-          <ellipse cx="40" cy="73" rx="20" ry="13" fill="#d4dce8"/>
-          <!-- Glückliche Augen -->
-          <circle cx="27" cy="57" r="8"  fill="#1a1a1a"/>
-          <circle cx="53" cy="57" r="8"  fill="#1a1a1a"/>
-          <circle cx="30" cy="54" r="3"  fill="white"/>
-          <circle cx="56" cy="54" r="3"  fill="white"/>
-          <path d="M33,71 L40,75 L47,71" fill="none" stroke="#8090a0" stroke-width="1.5"/>
-          <circle cx="40" cy="72" r="3" fill="#8090a0"/>
-          <line x1="4"  y1="70" x2="25" y2="74" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-          <line x1="4"  y1="74" x2="25" y2="76" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-          <line x1="55" y1="74" x2="76" y2="70" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-          <line x1="55" y1="76" x2="76" y2="74" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-          <circle cx="16" cy="72" r="7.5" fill="#ffb3ba" opacity=".45"/>
-          <circle cx="64" cy="72" r="7.5" fill="#ffb3ba" opacity=".45"/>
-          <path d="M34,80 Q40,86 46,80" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
-          <text x="54" y="44" font-size="13" fill="#ff8fab" opacity=".9">♡</text>
-          <!-- Arm mit Pizza-Stück -->
-          <path d="M10,92 Q-4,82 -12,88" fill="none" stroke="#b8c0cc" stroke-width="10" stroke-linecap="round"/>
-          <!-- Pizza-Dreieck -->
-          <path d="M-14,67 L-32,100 L4,100Z" fill="#f9a825"/>
-          <path d="M-14,67 L-32,100 L4,100" fill="none" stroke="#e65100" stroke-width="6" stroke-linejoin="round"/>
-          <!-- Belag -->
-          <circle cx="-18" cy="84" r="4.5" fill="#e53935" opacity=".8"/>
-          <circle cx="-8"  cy="89" r="4"   fill="#e53935" opacity=".8"/>
-          <circle cx="-23" cy="91" r="3.5" fill="#e53935" opacity=".8"/>
-        </g>
+      <!-- FROSCH oben-links, Sushi-Stäbchen -->
+      <svg class="a" style="top:-66px;left:-18px;width:92px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
+        <!-- Augen oben (Frosch-typisch) -->
+        <circle cx="28" cy="16" r="14" fill="#6db85c" stroke="#333" stroke-width="1.5"/>
+        <circle cx="64" cy="16" r="14" fill="#6db85c" stroke="#333" stroke-width="1.5"/>
+        <circle cx="28" cy="16" r="9"  fill="white"/>
+        <circle cx="64" cy="16" r="9"  fill="white"/>
+        <circle cx="30" cy="18" r="6.5" fill="#222"/>
+        <circle cx="66" cy="18" r="6.5" fill="#222"/>
+        <circle cx="32" cy="16" r="2.5" fill="white"/>
+        <circle cx="68" cy="16" r="2.5" fill="white"/>
+        <!-- Körper (leicht breiter – Frosch) -->
+        <ellipse cx="46" cy="76" rx="36" ry="25" fill="#6db85c" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="80" rx="23" ry="16" fill="#a8d878"/>
+        <!-- Arme -->
+        <ellipse cx="8"  cy="68" rx="10" ry="13" fill="#6db85c" stroke="#333" stroke-width="1.5" transform="rotate(-15,8,68)"/>
+        <!-- rechter Arm (hält Stäbchen) -->
+        <ellipse cx="84" cy="60" rx="10" ry="13" fill="#6db85c" stroke="#333" stroke-width="1.5" transform="rotate(-28,84,60)"/>
+        <!-- Füße (Frosch: etwas größer) -->
+        <ellipse cx="28" cy="97" rx="16" ry="8" fill="#6db85c" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="64" cy="97" rx="16" ry="8" fill="#6db85c" stroke="#333" stroke-width="1.5"/>
+        <!-- Kopf -->
+        <ellipse cx="46" cy="46" rx="30" ry="26" fill="#6db85c" stroke="#333" stroke-width="1.5"/>
+        <!-- Breites Frosch-Lächeln -->
+        <path d="M20,60 Q46,76 72,60" fill="#3a9030" stroke="#333" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="22" cy="56" r="7" fill="#ffb3ba" opacity=".4"/>
+        <circle cx="70" cy="56" r="7" fill="#ffb3ba" opacity=".4"/>
+        <!-- Stäbchen + Sushi -->
+        <line x1="88" y1="37" x2="104" y2="56" stroke="#6b4c14" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="93" y1="32" x2="108" y2="53" stroke="#6b4c14" stroke-width="2.5" stroke-linecap="round"/>
+        <rect  x="94" y="22" width="22" height="12" rx="4" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+        <rect  x="94" y="22" width="22" height="3"  rx="1.5" fill="#2d2d2d"/>
+        <rect  x="94" y="31" width="22" height="3"  rx="1.5" fill="#2d2d2d"/>
+        <ellipse cx="105" cy="28" rx="8.5" ry="3.5" fill="#ff8c69"/>
       </svg>
+
+      <!-- KATZE unten-rechts, Pizza -->
+      <svg class="a" style="bottom:-62px;right:-18px;width:90px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
+        <!-- Spitze Ohren -->
+        <polygon points="20,22 10,2 34,14"  fill="#b8c0cc" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+        <polygon points="72,22 82,2 58,14"  fill="#b8c0cc" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
+        <polygon points="22,20 14,6 32,14"  fill="#ffc8d0"/>
+        <polygon points="70,20 78,6 60,14"  fill="#ffc8d0"/>
+        <!-- Körper -->
+        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#d4dce8"/>
+        <!-- Arme -->
+        <!-- linker Arm (hält Pizza) -->
+        <ellipse cx="10" cy="62" rx="9" ry="13" fill="#b8c0cc" stroke="#333" stroke-width="1.5" transform="rotate(-22,10,62)"/>
+        <ellipse cx="82" cy="68" rx="9" ry="13" fill="#b8c0cc" stroke="#333" stroke-width="1.5" transform="rotate(12,82,68)"/>
+        <!-- Füße -->
+        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
+        <!-- Kopf -->
+        <circle cx="46" cy="40" r="27" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="47" rx="14" ry="10" fill="#d4dce8" stroke="#333" stroke-width="1"/>
+        <!-- Glückliche Augen -->
+        <circle cx="34" cy="36" r="6"  fill="#222"/>
+        <circle cx="58" cy="36" r="6"  fill="#222"/>
+        <circle cx="36" cy="34" r="2"  fill="white"/>
+        <circle cx="60" cy="34" r="2"  fill="white"/>
+        <circle cx="46" cy="45" r="2.5" fill="#8090a0"/>
+        <line x1="6"  y1="43" x2="30" y2="47" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+        <line x1="6"  y1="47" x2="30" y2="49" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+        <line x1="62" y1="47" x2="86" y2="43" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+        <line x1="62" y1="49" x2="86" y2="47" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+        <circle cx="24" cy="44" r="6.5" fill="#ffb3ba" opacity=".4"/>
+        <circle cx="68" cy="44" r="6.5" fill="#ffb3ba" opacity=".4"/>
+        <path d="M40,53 Q46,59 52,53" fill="none" stroke="#222" stroke-width="1.8" stroke-linecap="round"/>
+        <!-- Pizza-Stück -->
+        <path d="M-4,50 L-22,84 L14,84Z" fill="#f9a825" stroke="#333" stroke-width="1.2" stroke-linejoin="round"/>
+        <path d="M-4,50 L-22,84 L14,84" fill="none" stroke="#e65100" stroke-width="6" stroke-linejoin="round"/>
+        <circle cx="-8"  cy="68" r="4.5" fill="#e53935" opacity=".85"/>
+        <circle cx="2"   cy="74" r="4"   fill="#e53935" opacity=".85"/>
+        <circle cx="-14" cy="74" r="3.5" fill="#e53935" opacity=".85"/>
+      </svg>
+
       <div class="card-body">
         <p class="q-label">Bonusfrage</p>
         <p class="q-text">Alles klar! Und was soll es sein?</p>
@@ -772,122 +782,103 @@
   </div>
 
 
-  <!-- ══════════════════════════════════════════════════════════
+  <!-- ════════════════════════════════════════════════════════
        SCREEN 6 · FINALE
-       Bär + Hase malen zusammen Keramik (die große Enthüllung!)
-  ══════════════════════════════════════════════════════════ -->
+       Bär unten-links + Hase unten-rechts (beide malen Keramik)
+       FIX 4: Datum entfernt
+  ════════════════════════════════════════════════════════ -->
   <div class="screen" id="s6">
     <div class="card">
-      <svg class="scene" viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bgF" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#fff8e8"/><stop offset="100%" stop-color="#f5e8ff"/>
-          </linearGradient>
-        </defs>
-        <rect width="320" height="160" fill="url(#bgF)"/>
-        <!-- Glitzer-Sterne -->
-        <text x="148" y="22" font-size="16" fill="#f39c12" opacity=".4">✦</text>
-        <text x="170" y="18" font-size="11" fill="#d63af9" opacity=".35">✦</text>
-        <text x="156" y="140" font-size="9"  fill="#ff4e8e" opacity=".3">✦</text>
 
-        <!-- ── BÄR links (malt mit Pinsel an Vase) ── -->
-        <g transform="translate(14,8)">
-          <ellipse cx="46" cy="126" rx="34" ry="20" fill="#c4856a"/>
-          <circle cx="13" cy="19" r="13" fill="#c4856a"/>
-          <circle cx="79" cy="19" r="13" fill="#c4856a"/>
-          <circle cx="13" cy="19" r="8"  fill="#a06548"/>
-          <circle cx="79" cy="19" r="8"  fill="#a06548"/>
-          <circle cx="46" cy="57" r="40" fill="#c4856a"/>
-          <ellipse cx="46" cy="69" rx="22" ry="15" fill="#e8c4a0"/>
-          <!-- Glückliche strahlende Augen -->
-          <circle cx="30" cy="50" r="9"  fill="#1a1a1a"/>
-          <circle cx="62" cy="50" r="9"  fill="#1a1a1a"/>
-          <circle cx="33" cy="47" r="3.5" fill="white"/>
-          <circle cx="65" cy="47" r="3.5" fill="white"/>
-          <circle cx="37" cy="55" r="1.5" fill="white" opacity=".7"/>
-          <circle cx="69" cy="55" r="1.5" fill="white" opacity=".7"/>
-          <ellipse cx="46" cy="67" rx="4.5" ry="3.5" fill="#1a1a1a"/>
-          <circle cx="18" cy="70" r="11" fill="#ffb3ba" opacity=".55"/>
-          <circle cx="74" cy="70" r="11" fill="#ffb3ba" opacity=".55"/>
-          <!-- Breites strahlendes Lächeln -->
-          <path d="M32,78 Q46,92 60,78" fill="#cc4444"/>
-          <path d="M32,78 Q46,92 60,78" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"/>
-          <!-- Arm mit Pinsel -->
-          <path d="M82,100 Q102,90 110,98" fill="none" stroke="#c4856a" stroke-width="12" stroke-linecap="round"/>
-          <rect  x="107" y="87" width="5"   height="24" rx="2.5" fill="#5c3a10"/>
-          <ellipse cx="109.5" cy="85" rx="4" ry="8" fill="#d8d8d8"/>
-          <path  d="M106,79 Q109.5,75 113,79" fill="#c8a860"/>
-          <ellipse cx="109.5" cy="77" rx="3.5" ry="2.5" fill="#9b59b6"/>
-        </g>
-
-        <!-- ── GETEILTE KERAMIK-VASE in der Mitte ── -->
-        <g transform="translate(126,46)">
-          <path d="M10,8 Q2,13 2,35 Q2,62 8,72 Q18,80 34,80 Q50,80 60,72 Q66,62 66,35 Q66,13 58,8 Q48,-2 34,-2 Q20,-2 10,8Z" fill="#d4b896" stroke="#b89870" stroke-width="2"/>
-          <!-- Halsring oben -->
-          <ellipse cx="34" cy="6" rx="22" ry="5" fill="#c8a880" stroke="#b89870" stroke-width="1"/>
-          <!-- Bemalte Muster drauf -->
-          <!-- Blume 1 (rosa, vom Bär) -->
-          <circle cx="22" cy="36" r="6.5" fill="#ff8fab" opacity=".9"/>
-          <circle cx="22" cy="30" r="3.5" fill="#ff8fab"/>
-          <circle cx="27" cy="36" r="3.5" fill="#ff8fab"/>
-          <circle cx="22" cy="42" r="3.5" fill="#ff8fab"/>
-          <circle cx="17" cy="36" r="3.5" fill="#ff8fab"/>
-          <circle cx="22" cy="36" r="3.5" fill="white"/>
-          <!-- Blume 2 (blau, vom Hasen) -->
-          <circle cx="46" cy="50" r="5.5" fill="#6b9fff" opacity=".9"/>
-          <circle cx="46" cy="45" r="3"   fill="#6b9fff"/>
-          <circle cx="50" cy="50" r="3"   fill="#6b9fff"/>
-          <circle cx="46" cy="55" r="3"   fill="#6b9fff"/>
-          <circle cx="42" cy="50" r="3"   fill="#6b9fff"/>
-          <circle cx="46" cy="50" r="3"   fill="white"/>
-          <!-- Stern -->
-          <text x="28" y="26" font-size="12" fill="#f39c12" opacity=".8">★</text>
-          <!-- Kleines Blümchen -->
-          <text x="12" y="58" font-size="10" fill="#27ae60" opacity=".7">✿</text>
-          <!-- Punktmuster -->
-          <circle cx="38" cy="22" r="3" fill="#d63af9" opacity=".6"/>
-          <circle cx="56" cy="30" r="2.5" fill="#ff4e8e" opacity=".6"/>
-        </g>
-
-        <!-- ── HASE rechts (malt von der anderen Seite) ── -->
-        <g transform="translate(202,10)">
-          <ellipse cx="46" cy="126" rx="30" ry="20" fill="#f0ece8"/>
-          <ellipse cx="28" cy="5"  rx="11" ry="27" fill="#f0ece8"/>
-          <ellipse cx="64" cy="5"  rx="11" ry="27" fill="#f0ece8"/>
-          <ellipse cx="28" cy="5"  rx="6.5" ry="20" fill="#ffc8d0" opacity=".65"/>
-          <ellipse cx="64" cy="5"  rx="6.5" ry="20" fill="#ffc8d0" opacity=".65"/>
-          <circle cx="46" cy="60" r="38" fill="#f0ece8"/>
-          <ellipse cx="46" cy="72" rx="20" ry="13" fill="#e8ddd8"/>
-          <!-- Strahlende glückliche Augen -->
-          <circle cx="32" cy="54" r="8.5" fill="#1a1a1a"/>
-          <circle cx="60" cy="54" r="8.5" fill="#1a1a1a"/>
-          <circle cx="35" cy="51" r="3"   fill="white"/>
-          <circle cx="63" cy="51" r="3"   fill="white"/>
-          <circle cx="39" cy="58" r="1.5" fill="white" opacity=".7"/>
-          <circle cx="67" cy="58" r="1.5" fill="white" opacity=".7"/>
-          <ellipse cx="46" cy="70" rx="3.5" ry="2.5" fill="#ffb3ba"/>
-          <circle cx="20" cy="72" r="11" fill="#ffb3ba" opacity=".5"/>
-          <circle cx="72" cy="72" r="11" fill="#ffb3ba" opacity=".5"/>
-          <path d="M38,79 Q46,88 54,79" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"/>
-          <!-- Arm mit Pinsel (zur Vase zeigend) -->
-          <path d="M12,98 Q-8,88 -16,95" fill="none" stroke="#f0ece8" stroke-width="12" stroke-linecap="round"/>
-          <rect  x="-23" y="86" width="5"   height="24" rx="2.5" fill="#5c3a10" transform="rotate(8,-20,98)"/>
-          <ellipse cx="-20" cy="84" rx="4" ry="8" fill="#d8d8d8" transform="rotate(8,-20,84)"/>
-          <ellipse cx="-20" cy="80" rx="3.5" ry="2.5" fill="#6b9fff"/>
-        </g>
-
-        <!-- Herz über der Vase -->
-        <path d="M159,16 C159,12 154,8 154,12 C154,8 149,12 149,16 C149,21 154,26 154,26 C154,26 159,21 159,16Z" fill="#ff8fab" opacity=".85"/>
+      <!-- BÄR unten-links, malt Keramik -->
+      <svg class="a" style="bottom:-66px;left:-18px;width:92px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="22" cy="14" r="13" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <circle cx="22" cy="14" r="8"  fill="#a06548"/>
+        <circle cx="70" cy="14" r="13" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <circle cx="70" cy="14" r="8"  fill="#a06548"/>
+        <!-- Körper -->
+        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#e8c4a0"/>
+        <!-- linker Arm (hält Topf) -->
+        <ellipse cx="8"  cy="66" rx="9" ry="13" fill="#c4856a" stroke="#333" stroke-width="1.5" transform="rotate(-20,8,66)"/>
+        <!-- rechter Arm (hält Pinsel) -->
+        <ellipse cx="84" cy="60" rx="9" ry="13" fill="#c4856a" stroke="#333" stroke-width="1.5" transform="rotate(-30,84,60)"/>
+        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <!-- Kopf -->
+        <circle cx="46" cy="38" r="27" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="44" rx="14" ry="10" fill="#e8c4a0" stroke="#333" stroke-width="1"/>
+        <!-- Strahlende Augen -->
+        <circle cx="34" cy="33" r="6.5" fill="#222"/>
+        <circle cx="58" cy="33" r="6.5" fill="#222"/>
+        <circle cx="36" cy="30" r="2.5" fill="white"/>
+        <circle cx="60" cy="30" r="2.5" fill="white"/>
+        <ellipse cx="46" cy="42" rx="3" ry="2" fill="#222"/>
+        <circle cx="24" cy="41" r="8" fill="#ffb3ba" opacity=".55"/>
+        <circle cx="68" cy="41" r="8" fill="#ffb3ba" opacity=".55"/>
+        <path d="M38,49 Q46,57 54,49" fill="#cc4444"/>
+        <path d="M38,49 Q46,57 54,49" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round"/>
+        <!-- Kleiner Keramiktopf -->
+        <path d="M-14,52 Q-20,57 -18,74 Q-14,80 -6,80 Q2,80 6,74 Q8,57 2,52 Q-4,46 -6,46 Q-10,46 -14,52Z" fill="#d4b896" stroke="#b89870" stroke-width="1.5"/>
+        <circle cx="-6" cy="62" r="4.5" fill="#ff8fab" opacity=".9"/>
+        <circle cx="-6" cy="58" r="2.5" fill="#ff8fab"/>
+        <circle cx="-3" cy="62" r="2.5" fill="#ff8fab"/>
+        <circle cx="-6" cy="66" r="2.5" fill="#ff8fab"/>
+        <circle cx="-9" cy="62" r="2.5" fill="#ff8fab"/>
+        <circle cx="-6" cy="62" r="2.5" fill="white"/>
+        <!-- Pinsel -->
+        <rect x="88" y="39" width="4" height="22" rx="2" fill="#5c3a10"/>
+        <ellipse cx="90" cy="37" rx="3.5" ry="7" fill="#d8d8d8"/>
+        <ellipse cx="90" cy="33" rx="3"   ry="2.5" fill="#9b59b6"/>
       </svg>
-      <div class="card-body">
+
+      <!-- HASE unten-rechts, malt Keramik -->
+      <svg class="a" style="bottom:-66px;right:-18px;width:90px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="30" cy="6"  rx="11" ry="24" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="62" cy="6"  rx="11" ry="24" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="30" cy="6"  rx="6.5" ry="17" fill="#ffc8d0"/>
+        <ellipse cx="62" cy="6"  rx="6.5" ry="17" fill="#ffc8d0"/>
+        <!-- Körper -->
+        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#ede5de"/>
+        <!-- linker Arm (hält Pinsel) -->
+        <ellipse cx="8"  cy="60" rx="9" ry="13" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(-30,8,60)"/>
+        <!-- rechter Arm -->
+        <ellipse cx="84" cy="68" rx="9" ry="13" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(12,84,68)"/>
+        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <!-- Kopf -->
+        <circle cx="46" cy="42" r="27" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
+        <ellipse cx="46" cy="49" rx="13" ry="9" fill="#ede5de" stroke="#333" stroke-width="1"/>
+        <!-- Strahlende Augen -->
+        <circle cx="34" cy="37" r="6.5" fill="#222"/>
+        <circle cx="58" cy="37" r="6.5" fill="#222"/>
+        <circle cx="36" cy="34" r="2.5" fill="white"/>
+        <circle cx="60" cy="34" r="2.5" fill="white"/>
+        <ellipse cx="46" cy="47" rx="3" ry="2" fill="#ffb3ba"/>
+        <circle cx="24" cy="45" r="8" fill="#ffb3ba" opacity=".5"/>
+        <circle cx="68" cy="45" r="8" fill="#ffb3ba" opacity=".5"/>
+        <path d="M38,54 Q46,62 54,54" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round"/>
+        <!-- Pinsel (zur anderen Seite gerichtet) -->
+        <rect x="-4" y="40" width="4" height="22" rx="2" fill="#5c3a10"/>
+        <ellipse cx="-2" cy="38" rx="3.5" ry="7" fill="#d8d8d8"/>
+        <ellipse cx="-2" cy="34" rx="3"   ry="2.5" fill="#6b9fff"/>
+        <!-- Kleines fertiges Keramikstück -->
+        <rect x="86" y="56" width="18" height="22" rx="5" fill="#d4b896" stroke="#b89870" stroke-width="1.2"/>
+        <ellipse cx="95" cy="56" rx="9" ry="4" fill="#d4b896" stroke="#b89870" stroke-width="1"/>
+        <circle cx="91" cy="65" r="3"   fill="#6b9fff" opacity=".9"/>
+        <circle cx="98" cy="70" r="2.5" fill="#ff8fab" opacity=".9"/>
+        <text   x="88"  y="60" font-size="8" fill="#f39c12" opacity=".8">★</text>
+      </svg>
+
+      <div class="card-body" style="padding-bottom:44px">
         <span class="finale-badge">Das Date-Abenteuer enthüllt sich …</span>
+        <!-- FIX 4: Datum entfernt – nur noch die Wahl aus Schritt 4 -->
         <p class="finale-sentence">
           Bist du bereit für einen Nachmittag voller
           <span class="highlight">Keramik-Katastrophen</span>,
           gefolgt von
-          <span class="highlight" id="choiceText">…</span>
-          am kommenden
-          <span class="highlight" id="dateText">…</span>?
+          <span class="highlight" id="choiceText">…</span>?
         </p>
         <!-- ANPASSEN: Hinweis-Text -->
         <p class="finale-hint" id="finaleHint">
@@ -918,8 +909,6 @@
      KONFIGURATION – hier anpassen
   ============================================================== */
   const CONFIG = {
-    // ANPASSEN: Datum des Dates
-    date: "Samstag, 7. Juni",
     // ANPASSEN: Hinweis unter dem Einladungssatz (false = ausblenden)
     hint: "Ort &amp; Uhrzeit folgen – ich hab alles geplant 😏<br>Tipp: Kleider einplanen, die du auch bekleckern darfst.",
     // ANPASSEN: Reaktion nach JA!-Klick
@@ -948,8 +937,6 @@
   }
 
   function init() {
-    const dateEl = document.getElementById("dateText");
-    if (dateEl) dateEl.textContent = CONFIG.date;
     const hintEl = document.getElementById("finaleHint");
     if (hintEl) {
       if (CONFIG.hint) hintEl.innerHTML = CONFIG.hint;
