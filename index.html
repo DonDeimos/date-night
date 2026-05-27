@@ -3,616 +3,926 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <!-- ANPASSEN: Browser-Tab-Titel -->
   <title>Eine geheime Mission ...</title>
-
   <style>
-    /* ================================================================
-       DESIGN-VARIABLEN
-       Alle Farben, Radien & Übergänge an einem Ort – hier anpassen.
-    ================================================================ */
     :root {
-      /* Seiten-Hintergrund */
-      --bg-a: #0f0c29;
-      --bg-b: #302b63;
-      --bg-c: #24243e;
-
-      /* Akzentgradient (Buttons, Highlights, Progress) */
-      --accent-1: #d63af9;
-      --accent-2: #ff4e8e;
-
-      /* Karten-Hintergrund & Schatten */
-      --card-bg:     #ffffff;
-      --card-shadow: 0 4px 8px rgba(0,0,0,.12),
-                     0 24px 64px rgba(0,0,0,.35),
-                     inset 0 1px 0 rgba(255,255,255,.8);
+      --bg-a: #0f0c29; --bg-b: #302b63; --bg-c: #24243e;
+      --accent-1: #d63af9; --accent-2: #ff4e8e;
+      --card-bg: #ffffff;
+      --card-shadow: 0 4px 8px rgba(0,0,0,.12), 0 24px 64px rgba(0,0,0,.35);
       --card-radius: 26px;
-
-      /* Button-Ruhezustand */
-      --btn-bg:     #f5f6fa;
-      --btn-border: #e4e7f0;
-      --btn-radius: 16px;
-
-      /* Texte */
-      --text-900: #14143a;
-      --text-500: #4a5568;
-      --text-300: #a0aec0;
-
-      /* Übergangs-Dauer */
-      --speed-btn:    .2s;
-      --speed-screen: .42s;
+      --btn-bg: #f5f6fa; --btn-border: #e4e7f0; --btn-radius: 16px;
+      --text-900: #14143a; --text-500: #4a5568; --text-300: #a0aec0;
+      --speed-btn: .2s; --speed-screen: .42s;
     }
-
-    /* ================================================================
-       RESET & GRUNDLAYOUT
-    ================================================================ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       min-height: 100vh;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
-                   "Helvetica Neue", sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       background: linear-gradient(145deg, var(--bg-a) 0%, var(--bg-b) 50%, var(--bg-c) 100%);
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
+      display: flex; align-items: flex-start; justify-content: center;
       padding: 28px 16px 56px;
     }
 
-    /* ================================================================
-       SPIELFELD – begrenzter Container
-    ================================================================ */
-    .game {
-      width: 100%;
-      max-width: 500px;
-      padding-top: 20px;
-    }
+    .game { width: 100%; max-width: 500px; padding-top: 20px; }
 
-    /* ================================================================
-       KARTE – weißer Inhalt-Container
-    ================================================================ */
+    /* Card ohne eigenes Padding – Scene + card-body übernehmen das */
     .card {
       background: var(--card-bg);
       border-radius: var(--card-radius);
-      padding: 36px 28px 32px;
       box-shadow: var(--card-shadow);
+      overflow: hidden;
     }
 
-    @media (max-width: 380px) {
-      .card { padding: 28px 20px 24px; }
+    /* Buntes Tier-Banner oben in der Karte */
+    .scene {
+      width: 100%;
+      display: block;
     }
 
-    /* ================================================================
-       SCREENS
-       Jede „Seite" ist ein .screen-Div.
-       Standard: unsichtbar (display:none).
-       .active → eingeblendet mit Slide-Up-Animation.
-    ================================================================ */
+    /* Inhalt unterhalb der Tiere */
+    .card-body { padding: 20px 28px 32px; }
+    @media (max-width: 380px) { .card-body { padding: 16px 20px 24px; } }
+
     .screen { display: none; }
-
     .screen.active {
       display: block;
       animation: fadeUp var(--speed-screen) cubic-bezier(.25,.46,.45,.94) both;
     }
-
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(22px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ================================================================
-       FORTSCHRITTSBALKEN
-       Vier Segmente, befüllte werden per .filled markiert.
-    ================================================================ */
-    .progress {
-      display: flex;
-      gap: 7px;
-      margin-bottom: 26px;
-    }
+    .progress { display: flex; gap: 7px; margin-bottom: 26px; }
+    .progress-step { flex: 1; height: 5px; border-radius: 3px; background: var(--btn-border); transition: background .35s; }
+    .progress-step.filled { background: linear-gradient(90deg, var(--accent-1), var(--accent-2)); }
 
-    .progress-step {
-      flex: 1;
-      height: 5px;
-      border-radius: 3px;
-      background: var(--btn-border);
-      transition: background .35s;
-    }
-
-    .progress-step.filled {
-      background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
-    }
-
-    /* ================================================================
-       FRAGEN-LABEL (z.B. „Frage 1 von 4")
-    ================================================================ */
     .q-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 2.5px;
-      text-transform: uppercase;
-      /* Farbverlauf auf Text */
+      font-size: 11px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
       background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
       margin-bottom: 12px;
     }
+    .q-text { font-size: 18px; font-weight: 600; line-height: 1.55; color: var(--text-900); margin-bottom: 26px; }
+    @media (min-width: 400px) { .q-text { font-size: 20px; } }
 
-    /* ================================================================
-       FRAGEN-TEXT
-    ================================================================ */
-    .q-text {
-      font-size: 18px;
-      font-weight: 600;
-      line-height: 1.55;
-      color: var(--text-900);
-      margin-bottom: 26px;
-    }
-
-    @media (min-width: 400px) {
-      .q-text { font-size: 20px; }
-    }
-
-    /* ================================================================
-       ANTWORT-BUTTONS
-    ================================================================ */
-    .options {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
+    .options { display: flex; flex-direction: column; gap: 10px; }
     .opt {
-      background: var(--btn-bg);
-      border: 2px solid var(--btn-border);
-      border-radius: var(--btn-radius);
-      padding: 14px 18px;
-      font-family: inherit;
-      font-size: 15px;
-      font-weight: 500;
-      color: var(--text-900);
-      text-align: left;
-      line-height: 1.45;
-      cursor: pointer;
-      transition:
-        background var(--speed-btn),
-        border-color var(--speed-btn),
-        color var(--speed-btn),
-        transform var(--speed-btn),
-        box-shadow var(--speed-btn);
+      background: var(--btn-bg); border: 2px solid var(--btn-border); border-radius: var(--btn-radius);
+      padding: 14px 18px; font-family: inherit; font-size: 15px; font-weight: 500;
+      color: var(--text-900); text-align: left; line-height: 1.45; cursor: pointer;
+      transition: background var(--speed-btn), border-color var(--speed-btn), color var(--speed-btn),
+                  transform var(--speed-btn), box-shadow var(--speed-btn);
     }
-
-    .opt:hover,
-    .opt:focus-visible {
+    .opt:hover, .opt:focus-visible {
       background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-      border-color: transparent;
-      color: #fff;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 22px rgba(214, 58, 249, .35);
-      outline: none;
+      border-color: transparent; color: #fff;
+      transform: translateY(-2px); box-shadow: 0 8px 22px rgba(214,58,249,.35); outline: none;
     }
-
     .opt:active { transform: translateY(0); }
 
-    /* ================================================================
-       INTRO-SCREEN
-    ================================================================ */
-    .intro-icon {
-      font-size: 60px;
-      display: block;
-      text-align: center;
-      margin-bottom: 16px;
-    }
+    .intro-title { font-size: 24px; font-weight: 700; color: var(--text-900); text-align: center; margin-bottom: 10px; }
+    .intro-sub   { font-size: 15px; color: var(--text-500); text-align: center; line-height: 1.65; margin-bottom: 32px; }
 
-    .intro-title {
-      font-size: 24px;
-      font-weight: 700;
-      color: var(--text-900);
-      text-align: center;
-      margin-bottom: 10px;
-    }
-
-    .intro-sub {
-      font-size: 15px;
-      color: var(--text-500);
-      text-align: center;
-      line-height: 1.65;
-      margin-bottom: 32px;
-    }
-
-    /* Haupt-CTA-Button (Intro & Finale) */
     .cta-btn {
-      display: block;
-      width: 100%;
-      padding: 18px;
+      display: block; width: 100%; padding: 18px;
       background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-      color: #fff;
-      border: none;
-      border-radius: var(--btn-radius);
-      font-family: inherit;
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: .3px;
-      cursor: pointer;
+      color: #fff; border: none; border-radius: var(--btn-radius);
+      font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer;
       transition: transform var(--speed-btn), box-shadow var(--speed-btn), opacity var(--speed-btn);
     }
-
-    .cta-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 28px rgba(214, 58, 249, .42);
-      opacity: .93;
-    }
-
-    /* ================================================================
-       FINALE-SCREEN
-    ================================================================ */
-    .finale-icon {
-      font-size: 64px;
-      display: block;
-      text-align: center;
-      margin-bottom: 8px;
-      animation: float 2.8s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50%       { transform: translateY(-9px); }
-    }
+    .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(214,58,249,.42); opacity:.93; }
 
     .finale-badge {
-      display: block;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 2.5px;
-      text-transform: uppercase;
-      text-align: center;
+      display: block; font-size: 11px; font-weight: 700; letter-spacing: 2.5px;
+      text-transform: uppercase; text-align: center;
       background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 22px;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 16px;
     }
-
-    /* Der Einladungs-Satz (großer Absatz) */
     .finale-sentence {
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--text-900);
-      text-align: center;
-      line-height: 1.7;
-      margin-bottom: 28px;
+      font-size: 18px; font-weight: 600; color: var(--text-900);
+      text-align: center; line-height: 1.7; margin-bottom: 24px;
     }
-
-    @media (min-width: 400px) {
-      .finale-sentence { font-size: 20px; }
-    }
-
-    /* Hervorgehobene Spans innerhalb des Satzes */
+    @media (min-width: 400px) { .finale-sentence { font-size: 20px; } }
     .highlight {
       font-weight: 800;
       background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
+    .finale-hint { font-size: 13px; color: var(--text-300); text-align: center; font-style: italic; line-height: 1.65; margin-bottom: 28px; }
 
-    /* Kleiner Hinweis-Text */
-    .finale-hint {
-      font-size: 13px;
-      color: var(--text-300);
-      text-align: center;
-      font-style: italic;
-      line-height: 1.65;
-      margin-bottom: 28px;
-    }
-
-    /* JA!-Button */
     .yes-btn {
-      display: block;
-      width: 100%;
-      padding: 20px;
+      display: block; width: 100%; padding: 20px;
       background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-      color: #fff;
-      border: none;
-      border-radius: var(--btn-radius);
-      font-family: inherit;
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: 1px;
-      cursor: pointer;
+      color: #fff; border: none; border-radius: var(--btn-radius);
+      font-family: inherit; font-size: 20px; font-weight: 800; letter-spacing: 1px; cursor: pointer;
       transition: transform var(--speed-btn), box-shadow var(--speed-btn);
     }
-
-    .yes-btn:hover {
-      transform: translateY(-3px) scale(1.01);
-      box-shadow: 0 14px 38px rgba(214, 58, 249, .5);
-    }
-
+    .yes-btn:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 14px 38px rgba(214,58,249,.5); }
     .yes-btn:active { transform: translateY(0) scale(1); }
 
-    /* ================================================================
-       CELEBRATION-OVERLAY (nach Klick auf „JA!")
-    ================================================================ */
     #celebration {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(8, 8, 28, .75);
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
-      z-index: 999;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
+      display: none; position: fixed; inset: 0; background: rgba(8,8,28,.75);
+      backdrop-filter: blur(5px); z-index: 999;
+      align-items: center; justify-content: center; padding: 24px;
     }
-
     #celebration.show { display: flex; }
-
     .celeb-card {
-      background: #fff;
-      border-radius: 28px;
-      padding: 44px 32px;
-      max-width: 360px;
-      width: 100%;
-      text-align: center;
+      background: #fff; border-radius: 28px; padding: 44px 32px;
+      max-width: 360px; width: 100%; text-align: center;
       animation: popIn .45s cubic-bezier(.175,.885,.32,1.275);
     }
-
-    @keyframes popIn {
-      from { opacity: 0; transform: scale(.75); }
-      to   { opacity: 1; transform: scale(1); }
-    }
-
+    @keyframes popIn { from { opacity:0; transform:scale(.75); } to { opacity:1; transform:scale(1); } }
     .celeb-icon  { font-size: 62px; display: block; margin-bottom: 14px; }
     .celeb-title { font-size: 22px; font-weight: 700; color: var(--text-900); margin-bottom: 12px; }
     .celeb-body  { font-size: 15px; color: var(--text-500); line-height: 1.65; margin-bottom: 24px; }
-
-    .celeb-close {
-      font-size: 13px;
-      color: var(--text-300);
-      cursor: pointer;
-      text-decoration: underline;
-      background: none;
-      border: none;
-      font-family: inherit;
-    }
+    .celeb-close { font-size: 13px; color: var(--text-300); cursor: pointer; text-decoration: underline; background: none; border: none; font-family: inherit; }
   </style>
 </head>
 <body>
-
 <div class="game">
 
-  <!-- ==============================================================
+  <!-- ══════════════════════════════════════════════════════════
        SCREEN 0 · INTRO
-       ANPASSEN: .intro-title, .intro-sub, Button-Text
-  ============================================================== -->
+       Bär mit Lupe + Hase mit Umschlag
+  ══════════════════════════════════════════════════════════ -->
   <div class="screen active" id="s0">
     <div class="card">
-      <!-- ANPASSEN: Intro-Emoji -->
-      <span class="intro-icon">🔍</span>
-      <!-- ANPASSEN: Überschrift -->
-      <h1 class="intro-title">Geheime Date-Mission</h1>
-      <!-- ANPASSEN: Einleitung -->
-      <p class="intro-sub">
-        Bevor ich dir verrate, was ich plane, brauchst du erst
-        eine Art&nbsp;&hellip; Eignungstest. Keine Angst – er
-        ist lösbar. Meistens.
-      </p>
-      <button class="cta-btn" onclick="goTo('s1')">Test starten →</button>
+      <svg class="scene" viewBox="0 0 320 145" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bg0" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fff0f8"/><stop offset="100%" stop-color="#ede8ff"/>
+          </linearGradient>
+        </defs>
+        <rect width="320" height="145" fill="url(#bg0)"/>
+        <!-- Sterne Deko -->
+        <text x="158" y="38" font-size="18" fill="#d63af9" opacity=".25">✦</text>
+        <text x="148" y="115" font-size="11" fill="#ff4e8e" opacity=".2">✦</text>
+        <text x="170" y="108" font-size="9"  fill="#d63af9" opacity=".2">✦</text>
+
+        <!-- ── BÄR links (neugierig, mit Lupe) ── -->
+        <g transform="translate(38,8)">
+          <!-- Körper -->
+          <ellipse cx="40" cy="118" rx="30" ry="18" fill="#c4856a"/>
+          <!-- Ohren -->
+          <circle cx="11" cy="18" r="13" fill="#c4856a"/>
+          <circle cx="69" cy="18" r="13" fill="#c4856a"/>
+          <circle cx="11" cy="18" r="8"  fill="#a06548"/>
+          <circle cx="69" cy="18" r="8"  fill="#a06548"/>
+          <!-- Kopf -->
+          <circle cx="40" cy="54" r="38" fill="#c4856a"/>
+          <!-- Schnauze -->
+          <ellipse cx="40" cy="65" rx="20" ry="13" fill="#e8c4a0"/>
+          <!-- Augen -->
+          <circle cx="26" cy="47" r="8"  fill="#1a1a1a"/>
+          <circle cx="54" cy="47" r="8"  fill="#1a1a1a"/>
+          <circle cx="29" cy="44" r="3"  fill="white"/>
+          <circle cx="57" cy="44" r="3"  fill="white"/>
+          <!-- Nase -->
+          <ellipse cx="40" cy="63" rx="4.5" ry="3" fill="#1a1a1a"/>
+          <!-- Wangen -->
+          <circle cx="16" cy="63" r="8" fill="#ffb3ba" opacity=".5"/>
+          <circle cx="64" cy="63" r="8" fill="#ffb3ba" opacity=".5"/>
+          <!-- Mund -->
+          <path d="M34,71 Q40,77 46,71" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+          <!-- Arm mit Lupe -->
+          <path d="M70,82 Q88,76 96,84" fill="none" stroke="#c4856a" stroke-width="11" stroke-linecap="round"/>
+          <!-- Lupe -->
+          <circle cx="106" cy="89" r="14" fill="none" stroke="#8B6914" stroke-width="3.5"/>
+          <circle cx="106" cy="89" r="10" fill="rgba(200,230,255,.35)"/>
+          <line  x1="117" y1="100" x2="126" y2="111" stroke="#8B6914" stroke-width="4" stroke-linecap="round"/>
+          <text x="101" y="95" font-size="12" fill="#8B6914" font-weight="bold">?</text>
+        </g>
+
+        <!-- ── HASE rechts (mit Briefumschlag) ── -->
+        <g transform="translate(180,10)">
+          <!-- Körper -->
+          <ellipse cx="40" cy="116" rx="28" ry="18" fill="#f0ece8"/>
+          <!-- Ohren -->
+          <ellipse cx="22" cy="5"  rx="11" ry="26" fill="#f0ece8"/>
+          <ellipse cx="58" cy="5"  rx="11" ry="26" fill="#f0ece8"/>
+          <ellipse cx="22" cy="5"  rx="6.5" ry="19" fill="#ffc8d0" opacity=".7"/>
+          <ellipse cx="58" cy="5"  rx="6.5" ry="19" fill="#ffc8d0" opacity=".7"/>
+          <!-- Kopf -->
+          <circle cx="40" cy="57" r="36" fill="#f0ece8"/>
+          <!-- Schnauze -->
+          <ellipse cx="40" cy="67" rx="18" ry="12" fill="#e8ddd8"/>
+          <!-- Augen -->
+          <circle cx="27" cy="51" r="7"  fill="#1a1a1a"/>
+          <circle cx="53" cy="51" r="7"  fill="#1a1a1a"/>
+          <circle cx="29" cy="48" r="2.5" fill="white"/>
+          <circle cx="55" cy="48" r="2.5" fill="white"/>
+          <!-- Nase -->
+          <ellipse cx="40" cy="65" rx="3.5" ry="2.5" fill="#ffb3ba"/>
+          <!-- Wangen -->
+          <circle cx="18" cy="65" r="7" fill="#ffb3ba" opacity=".5"/>
+          <circle cx="62" cy="65" r="7" fill="#ffb3ba" opacity=".5"/>
+          <!-- Mund -->
+          <path d="M35,72 Q40,77 45,72" fill="none" stroke="#1a1a1a" stroke-width="1.8" stroke-linecap="round"/>
+          <!-- Arm mit Umschlag -->
+          <path d="M10,84 Q-5,77 -14,84" fill="none" stroke="#f0ece8" stroke-width="10" stroke-linecap="round"/>
+          <!-- Umschlag -->
+          <rect x="-40" y="76" width="30" height="21" rx="3" fill="#fff9e6" stroke="#e0c870" stroke-width="1.5"/>
+          <path d="M-40,76 L-25,88 L-10,76" fill="none" stroke="#e0c870" stroke-width="1.5"/>
+          <!-- Herz drauf -->
+          <path d="M-28,85 C-28,83 -25,81 -25,84 C-25,81 -22,83 -22,85 C-22,87 -25,89 -25,89 C-25,89 -28,87 -28,85Z" fill="#ff8fab"/>
+        </g>
+      </svg>
+      <div class="card-body">
+        <h1 class="intro-title">Geheime Date-Mission</h1>
+        <p class="intro-sub">
+          Bevor ich dir verrate, was ich plane, brauchst du erst
+          eine Art&nbsp;… Eignungstest. Keine Angst – er
+          ist lösbar. Meistens.
+        </p>
+        <button class="cta-btn" onclick="goTo('s1')">Test starten →</button>
+      </div>
     </div>
   </div>
 
 
-  <!-- ==============================================================
-       SCREEN 1 · FRAGE 1
-       ANPASSEN: .q-text, die beiden .opt (Text + onclick-Ziel)
-  ============================================================== -->
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN 1 · FRAGE 1 – Herausforderung
+       Katze (selbstsicher, flexend) + Hund (nervös, schwitzend)
+  ══════════════════════════════════════════════════════════ -->
   <div class="screen" id="s1">
     <div class="card">
-      <!-- Fortschrittsbalken: 1 von 4 befüllt -->
-      <div class="progress">
-        <div class="progress-step filled"></div>
-        <div class="progress-step"></div>
-        <div class="progress-step"></div>
-        <div class="progress-step"></div>
-      </div>
-      <p class="q-label">Frage 1 von 4</p>
-      <p class="q-text">
-        Bist du heute bereit, dich einer Herausforderung zu stellen,
-        die deine Geduld (und meine künstlerischen Fähigkeiten)
-        massiv auf die Probe stellt?
-      </p>
-      <div class="options">
-        <!-- Beide Antworten führen zur selben nächsten Frage -->
-        <button class="opt" onclick="goTo('s2')">
-          💪 Ich liebe Herausforderungen
-        </button>
-        <button class="opt" onclick="goTo('s2')">
-          🤔 Hängt davon ab, wie sehr wir uns blamieren
-        </button>
+      <svg class="scene" viewBox="0 0 320 145" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fff3f0"/><stop offset="100%" stop-color="#f0f4ff"/>
+          </linearGradient>
+        </defs>
+        <rect width="320" height="145" fill="url(#bg1)"/>
+        <text x="154" y="75" text-anchor="middle" font-size="20" fill="#d63af9" opacity=".3" font-weight="bold">VS</text>
+
+        <!-- ── KATZE links (entschlossen, Bizeps) ── -->
+        <g transform="translate(28,8)">
+          <ellipse cx="45" cy="118" rx="32" ry="18" fill="#b8c0cc"/>
+          <!-- Spitze Ohren -->
+          <polygon points="10,25 2,3 26,15"  fill="#b8c0cc"/>
+          <polygon points="80,25 88,3 64,15" fill="#b8c0cc"/>
+          <polygon points="13,23 7,7 24,15"  fill="#ffc8d0"/>
+          <polygon points="77,23 83,7 66,15" fill="#ffc8d0"/>
+          <circle cx="45" cy="60" r="40" fill="#b8c0cc"/>
+          <ellipse cx="45" cy="71" rx="21" ry="13" fill="#d4dce8"/>
+          <!-- Entschlossene Augen (leicht zusammengekniffen) -->
+          <ellipse cx="30" cy="54" rx="8.5" ry="6.5" fill="#1a1a1a"/>
+          <ellipse cx="60" cy="54" rx="8"   ry="6"   fill="#1a1a1a"/>
+          <circle cx="33" cy="51" r="2.5" fill="white"/>
+          <circle cx="63" cy="51" r="2.5" fill="white"/>
+          <!-- Entschlossene Augenbrauen -->
+          <path d="M22,44 Q30,40 38,44" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M52,44 Q60,40 68,44" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- Nase + Schnurrhaare -->
+          <path d="M38,69 L45,73 L52,69" fill="none" stroke="#8090a0" stroke-width="1.5"/>
+          <circle cx="45" cy="70" r="3" fill="#8090a0"/>
+          <line x1="4"  y1="67" x2="28" y2="71" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+          <line x1="4"  y1="71" x2="28" y2="73" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+          <line x1="62" y1="71" x2="86" y2="67" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+          <line x1="62" y1="73" x2="86" y2="71" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+          <circle cx="16" cy="68" r="7" fill="#ffb3ba" opacity=".35"/>
+          <circle cx="74" cy="68" r="7" fill="#ffb3ba" opacity=".35"/>
+          <!-- Selbstbewusstes Lächeln -->
+          <path d="M38,79 Q45,86 52,79" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+          <!-- Flexender Arm + Bizeps -->
+          <path d="M80,93 Q100,72 110,75" fill="none" stroke="#b8c0cc" stroke-width="12" stroke-linecap="round"/>
+          <circle cx="110" cy="76" r="11" fill="#b8c0cc"/>
+          <path d="M101,68 Q106,63 111,66" fill="none" stroke="#909aaa" stroke-width="1.8" opacity=".5"/>
+        </g>
+
+        <!-- ── HUND rechts (nervös, Schweißtropfen) ── -->
+        <g transform="translate(180,12)">
+          <!-- Hängeohren (hinter Kopf) -->
+          <ellipse cx="10" cy="54" rx="13" ry="28" fill="#d4a56a" transform="rotate(-8,10,54)"/>
+          <ellipse cx="70" cy="54" rx="13" ry="28" fill="#d4a56a" transform="rotate(8,70,54)"/>
+          <ellipse cx="40" cy="116" rx="30" ry="18" fill="#d4a56a"/>
+          <circle cx="40" cy="58" r="37" fill="#d4a56a"/>
+          <ellipse cx="40" cy="70" rx="22" ry="15" fill="#e8c488"/>
+          <!-- Besorgte Augen -->
+          <circle cx="26" cy="52" r="8"  fill="#1a1a1a"/>
+          <circle cx="54" cy="52" r="8"  fill="#1a1a1a"/>
+          <circle cx="28" cy="49" r="2.5" fill="white"/>
+          <circle cx="56" cy="49" r="2.5" fill="white"/>
+          <!-- Hochgezogene Augenbrauen (besorgt) -->
+          <path d="M20,42 Q26,38 32,42" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+          <path d="M48,42 Q54,38 60,42" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+          <ellipse cx="40" cy="67" rx="6" ry="4.5" fill="#1a1a1a"/>
+          <circle cx="38" cy="65" r="1.5" fill="rgba(255,255,255,.4)"/>
+          <circle cx="16" cy="68" r="8" fill="#ffb3ba" opacity=".5"/>
+          <circle cx="64" cy="68" r="8" fill="#ffb3ba" opacity=".5"/>
+          <!-- Zitternder Mund -->
+          <path d="M32,78 Q36,74 40,78 Q44,81 48,78" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+          <!-- Schweißtropfen -->
+          <path d="M70,36 Q72,28 74,36 Q74,41 72,41 Q70,41 70,36Z" fill="#a8d8f0"/>
+          <path d="M78,48 Q80,42 81,48 Q81,51 79.5,51 Q78,51 78,48Z" fill="#a8d8f0"/>
+        </g>
+      </svg>
+      <div class="card-body">
+        <div class="progress">
+          <div class="progress-step filled"></div>
+          <div class="progress-step"></div>
+          <div class="progress-step"></div>
+          <div class="progress-step"></div>
+        </div>
+        <p class="q-label">Frage 1 von 4</p>
+        <p class="q-text">
+          Bist du heute bereit, dich einer Herausforderung zu stellen,
+          die deine Geduld (und meine künstlerischen Fähigkeiten)
+          massiv auf die Probe stellt?
+        </p>
+        <div class="options">
+          <button class="opt" onclick="goTo('s2')">💪 Ich liebe Herausforderungen</button>
+          <button class="opt" onclick="goTo('s2')">🤔 Hängt davon ab, wie sehr wir uns blamieren</button>
+        </div>
       </div>
     </div>
   </div>
 
 
-  <!-- ==============================================================
-       SCREEN 2 · FRAGE 2
-  ============================================================== -->
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN 2 · FRAGE 2 – Vibe / Umgebung
+       Maus (ordentlich malend) + Küken (Chaos, bekleckert)
+  ══════════════════════════════════════════════════════════ -->
   <div class="screen" id="s2">
     <div class="card">
-      <div class="progress">
-        <div class="progress-step filled"></div>
-        <div class="progress-step filled"></div>
-        <div class="progress-step"></div>
-        <div class="progress-step"></div>
-      </div>
-      <p class="q-label">Frage 2 von 4</p>
-      <p class="q-text">
-        Wir brauchen eine Umgebung, in der es okay ist, wenn wir
-        uns mit „Dreck" beschmutzen. Welcher Vibe passt zu uns?
-      </p>
-      <div class="options">
-        <button class="opt" onclick="goTo('s3')">
-          🧘 Stille, konzentrierte Umgebung
-        </button>
-        <button class="opt" onclick="goTo('s3')">
-          🎉 Lautes, kreatives Chaos
-        </button>
+      <svg class="scene" viewBox="0 0 320 145" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#f0fff4"/><stop offset="100%" stop-color="#fff0fb"/>
+          </linearGradient>
+        </defs>
+        <rect width="320" height="145" fill="url(#bg2)"/>
+
+        <!-- ── MAUS links (konzentriert, winziger Pinsel) ── -->
+        <g transform="translate(22,10)">
+          <ellipse cx="42" cy="118" rx="30" ry="18" fill="#c8c8c8"/>
+          <!-- Schürze -->
+          <path d="M24,98 Q42,112 60,98 L56,122 Q42,127 28,122Z" fill="white" opacity=".65"/>
+          <!-- Runde Ohren -->
+          <circle cx="14" cy="20" r="16" fill="#c8c8c8"/>
+          <circle cx="70" cy="20" r="16" fill="#c8c8c8"/>
+          <circle cx="14" cy="20" r="10" fill="#f0b0b8" opacity=".55"/>
+          <circle cx="70" cy="20" r="10" fill="#f0b0b8" opacity=".55"/>
+          <circle cx="42" cy="58" r="38" fill="#c8c8c8"/>
+          <ellipse cx="42" cy="70" rx="22" ry="14" fill="#d8d8d8"/>
+          <!-- Konzentrierte Augen (leicht zugekniffen) -->
+          <ellipse cx="28" cy="53" rx="7.5" ry="6"   fill="#1a1a1a"/>
+          <ellipse cx="56" cy="53" rx="7"   ry="5.5" fill="#1a1a1a"/>
+          <circle cx="31" cy="50" r="2.5" fill="white"/>
+          <circle cx="59" cy="50" r="2.5" fill="white"/>
+          <path d="M21,44 Q28,40 35,44" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"/>
+          <ellipse cx="42" cy="68" rx="4" ry="3" fill="#a0a0a0"/>
+          <circle cx="18" cy="68" r="7" fill="#ffb3ba" opacity=".4"/>
+          <circle cx="66" cy="68" r="7" fill="#ffb3ba" opacity=".4"/>
+          <path d="M36,77 Q42,82 48,77" fill="none" stroke="#1a1a1a" stroke-width="1.8" stroke-linecap="round"/>
+          <!-- Feiner Pinsel -->
+          <path d="M72,90 Q90,83 97,90" fill="none" stroke="#c8c8c8" stroke-width="10" stroke-linecap="round"/>
+          <rect  x="94" y="80" width="4"   height="20" rx="2"    fill="#6b4c14"/>
+          <ellipse cx="96" cy="78" rx="3" ry="7" fill="#e0e0e0"/>
+          <path  d="M93,73 Q96,70 99,73" fill="#c8a860"/>
+          <!-- Ordentliche Farbpunkte -->
+          <circle cx="110" cy="88" r="3.5" fill="#6b9fff" opacity=".9"/>
+          <circle cx="118" cy="82" r="3"   fill="#ff8fab" opacity=".9"/>
+          <circle cx="115" cy="93" r="2.5" fill="#9b59b6" opacity=".9"/>
+        </g>
+
+        <!-- ── KÜKEN rechts (kreatives Chaos, bekleckert) ── -->
+        <g transform="translate(186,8)">
+          <ellipse cx="40" cy="118" rx="30" ry="18" fill="#f5d030"/>
+          <!-- Farbkleckse auf Körper -->
+          <circle cx="32" cy="112" r="5.5" fill="#e74c3c" opacity=".65"/>
+          <circle cx="50" cy="119" r="4.5" fill="#3498db" opacity=".65"/>
+          <circle cx="40" cy="108" r="4"   fill="#9b59b6" opacity=".65"/>
+          <circle cx="40" cy="60"  r="40"  fill="#f5d030"/>
+          <!-- Farbkleckse im Gesicht -->
+          <circle cx="18" cy="48" r="7"  fill="#e74c3c" opacity=".6"/>
+          <circle cx="64" cy="54" r="5.5" fill="#3498db" opacity=".6"/>
+          <circle cx="54" cy="36" r="4.5" fill="#27ae60" opacity=".6"/>
+          <!-- Augen (aufgerissen, fröhlich) -->
+          <circle cx="27" cy="56" r="9"  fill="#1a1a1a"/>
+          <circle cx="55" cy="56" r="9"  fill="#1a1a1a"/>
+          <circle cx="30" cy="53" r="3.2" fill="white"/>
+          <circle cx="58" cy="53" r="3.2" fill="white"/>
+          <!-- Schnabel -->
+          <path d="M34,69 L40,76 L46,69Z" fill="#e07030"/>
+          <circle cx="15" cy="68" r="8" fill="#ffb3ba" opacity=".5"/>
+          <circle cx="65" cy="68" r="8" fill="#ffb3ba" opacity=".5"/>
+          <!-- Lachendes Maul -->
+          <path d="M31,79 Q40,88 49,79" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"/>
+          <!-- Großer Kleckser-Pinsel -->
+          <path d="M10,90 Q-6,79 -16,86" fill="none" stroke="#f5d030" stroke-width="12" stroke-linecap="round"/>
+          <rect x="-28" y="78" width="7" height="24" rx="3" fill="#6b4c14" transform="rotate(15,-24,90)"/>
+          <ellipse cx="-22" cy="76" rx="8" ry="11" fill="#ccc" transform="rotate(15,-22,76)"/>
+          <!-- Herumfliegende Farbtropfen -->
+          <circle cx="-42" cy="60" r="4.5" fill="#e74c3c" opacity=".7"/>
+          <circle cx="-50" cy="74" r="3.5" fill="#3498db" opacity=".7"/>
+          <circle cx="-36" cy="79" r="3"   fill="#f39c12" opacity=".7"/>
+          <circle cx="-56" cy="58" r="2.5" fill="#9b59b6" opacity=".6"/>
+        </g>
+      </svg>
+      <div class="card-body">
+        <div class="progress">
+          <div class="progress-step filled"></div>
+          <div class="progress-step filled"></div>
+          <div class="progress-step"></div>
+          <div class="progress-step"></div>
+        </div>
+        <p class="q-label">Frage 2 von 4</p>
+        <p class="q-text">
+          Wir brauchen eine Umgebung, in der es okay ist, wenn wir
+          uns mit „Dreck" beschmutzen. Welcher Vibe passt zu uns?
+        </p>
+        <div class="options">
+          <button class="opt" onclick="goTo('s3')">🧘 Stille, konzentrierte Umgebung</button>
+          <button class="opt" onclick="goTo('s3')">🎉 Lautes, kreatives Chaos</button>
+        </div>
       </div>
     </div>
   </div>
 
 
-  <!-- ==============================================================
-       SCREEN 3 · FRAGE 3
-  ============================================================== -->
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN 3 · FRAGE 3 – Feinmotorik
+       Fuchs (malt präzise kleine Blume) + Schwein (Pinsel-Chaos)
+  ══════════════════════════════════════════════════════════ -->
   <div class="screen" id="s3">
     <div class="card">
-      <div class="progress">
-        <div class="progress-step filled"></div>
-        <div class="progress-step filled"></div>
-        <div class="progress-step filled"></div>
-        <div class="progress-step"></div>
-      </div>
-      <p class="q-label">Frage 3 von 4</p>
-      <p class="q-text">
-        Wie gut ist deine Feinmotorik ohne Smartphone?
-      </p>
-      <div class="options">
-        <button class="opt" onclick="goTo('s4')">
-          🎯 Ich treffe jedes Nadelöhr
-        </button>
-        <button class="opt" onclick="goTo('s4')">
-          🙈 Ich bin froh, wenn ich nichts um mich herum bekleckere
-        </button>
+      <svg class="scene" viewBox="0 0 320 145" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bg3" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fffbe0"/><stop offset="100%" stop-color="#f0e8ff"/>
+          </linearGradient>
+        </defs>
+        <rect width="320" height="145" fill="url(#bg3)"/>
+
+        <!-- ── FUCHS links (hochkonzentriert, winziger Pinsel) ── -->
+        <g transform="translate(18,8)">
+          <ellipse cx="46" cy="118" rx="30" ry="18" fill="#e07845"/>
+          <!-- Schwanz -->
+          <path d="M64,108 Q88,97 90,112 Q88,122 74,120" fill="#e07845"/>
+          <path d="M66,111 Q84,102 86,113 Q84,120 74,118" fill="white" opacity=".55"/>
+          <!-- Spitze Ohren -->
+          <polygon points="14,28 4,2 32,18"  fill="#e07845"/>
+          <polygon points="78,28 88,2 60,18" fill="#e07845"/>
+          <polygon points="16,26 8,6 30,18"  fill="#c0401a"/>
+          <polygon points="76,26 82,6 62,18" fill="#c0401a"/>
+          <circle cx="46" cy="60" r="40" fill="#e07845"/>
+          <ellipse cx="46" cy="73" rx="26" ry="18" fill="#f8f0e8"/>
+          <!-- Konzentrierte Augen (eines leicht zugekniffen) -->
+          <ellipse cx="31" cy="53" rx="8"   ry="7" fill="#1a1a1a"/>
+          <ellipse cx="61" cy="53" rx="7.5" ry="5" fill="#1a1a1a"/>
+          <circle cx="34" cy="50" r="2.5" fill="white"/>
+          <circle cx="64" cy="50" r="2.2" fill="white"/>
+          <path d="M23,43 Q31,39 39,43" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+          <ellipse cx="46" cy="70" rx="5" ry="3.5" fill="#1a1a1a"/>
+          <circle cx="20" cy="72" r="8" fill="#ffb3ba" opacity=".45"/>
+          <circle cx="72" cy="72" r="8" fill="#ffb3ba" opacity=".45"/>
+          <!-- Herausgestreckte Zunge vor Konzentration -->
+          <path d="M40,80 Q46,86 52,80" fill="#ffb3ba"/>
+          <!-- Winziger Präzisionspinsel -->
+          <path d="M80,92 Q98,85 104,92" fill="none" stroke="#e07845" stroke-width="10" stroke-linecap="round"/>
+          <rect  x="101" y="81" width="3.5" height="22" rx="1.8" fill="#5c3a10"/>
+          <ellipse cx="102.7" cy="79" rx="2.8" ry="7" fill="#d8d8d8"/>
+          <path  d="M100.5,74 Q102.7,71 104.9,74" fill="#b88840"/>
+          <!-- Lilane Farbe am Spitz -->
+          <ellipse cx="102.7" cy="73" rx="2.5" ry="2" fill="#9b59b6"/>
+          <!-- Kleines Keramikgefäß -->
+          <path d="M114,79 Q116,76 128,76 Q140,76 142,79 Q144,87 142,98 Q138,104 128,104 Q118,104 114,98 Q112,87 114,79Z" fill="#d4b896" stroke="#b89870" stroke-width="1.2"/>
+          <!-- Blume drauf (vom Fuchs gemalt) -->
+          <circle cx="128" cy="90" r="4"   fill="#ff8fab"/>
+          <circle cx="128" cy="86" r="2.5" fill="#ff8fab"/>
+          <circle cx="131" cy="90" r="2.5" fill="#ff8fab"/>
+          <circle cx="128" cy="94" r="2.5" fill="#ff8fab"/>
+          <circle cx="125" cy="90" r="2.5" fill="#ff8fab"/>
+          <circle cx="128" cy="90" r="2.5" fill="white"/>
+        </g>
+
+        <!-- ── SCHWEIN rechts (überraschtes Chaos) ── -->
+        <g transform="translate(186,10)">
+          <ellipse cx="40" cy="118" rx="32" ry="18" fill="#ffb7c5"/>
+          <circle cx="40" cy="118" r="5"  fill="#3498db" opacity=".5"/>
+          <circle cx="54" cy="114" r="4"  fill="#27ae60" opacity=".5"/>
+          <!-- Runde Ohren -->
+          <circle cx="13" cy="23" r="16" fill="#ffb7c5"/>
+          <circle cx="67" cy="23" r="16" fill="#ffb7c5"/>
+          <circle cx="13" cy="23" r="10" fill="#ff8fab" opacity=".55"/>
+          <circle cx="67" cy="23" r="10" fill="#ff8fab" opacity=".55"/>
+          <circle cx="40" cy="60" r="38" fill="#ffb7c5"/>
+          <!-- Farbkleckse im Gesicht -->
+          <circle cx="17" cy="50" r="7"  fill="#3498db" opacity=".55"/>
+          <circle cx="65" cy="44" r="5"  fill="#f39c12" opacity=".55"/>
+          <circle cx="56" cy="71" r="4"  fill="#27ae60" opacity=".55"/>
+          <!-- Schnauze -->
+          <ellipse cx="40" cy="73" rx="18" ry="13" fill="#ff8fab" opacity=".65"/>
+          <circle cx="34" cy="73" r="4" fill="#d06070" opacity=".45"/>
+          <circle cx="46" cy="73" r="4" fill="#d06070" opacity=".45"/>
+          <!-- Überraschte Augen (groß & rund) -->
+          <circle cx="25" cy="55" r="10" fill="white"/>
+          <circle cx="55" cy="55" r="10" fill="white"/>
+          <circle cx="27" cy="57" r="7"  fill="#1a1a1a"/>
+          <circle cx="57" cy="57" r="7"  fill="#1a1a1a"/>
+          <circle cx="29" cy="55" r="2.5" fill="white"/>
+          <circle cx="59" cy="55" r="2.5" fill="white"/>
+          <!-- O-Mund (überrascht) -->
+          <circle cx="40" cy="83" r="6" fill="#1a1a1a"/>
+          <!-- Arm mit wildem, triefenden Pinsel -->
+          <path d="M10,92 Q-8,73 -18,80" fill="none" stroke="#ffb7c5" stroke-width="12" stroke-linecap="round"/>
+          <rect x="-30" y="70" width="8" height="28" rx="3" fill="#6b4c14" transform="rotate(-18,-26,85)"/>
+          <ellipse cx="-26" cy="68" rx="9" ry="12" fill="#c0c0c0" transform="rotate(-18,-26,68)"/>
+          <!-- Farbtropfen herumfliegend -->
+          <circle cx="-48" cy="56" r="5"  fill="#e74c3c" opacity=".65"/>
+          <circle cx="-56" cy="70" r="3.5" fill="#9b59b6" opacity=".65"/>
+          <circle cx="-42" cy="48" r="3"  fill="#27ae60" opacity=".65"/>
+          <path d="M-40,60 Q-38,54 -40,64" fill="#3498db" opacity=".7"/>
+          <path d="M-34,52 Q-32,46 -34,56" fill="#e74c3c" opacity=".7"/>
+        </g>
+      </svg>
+      <div class="card-body">
+        <div class="progress">
+          <div class="progress-step filled"></div>
+          <div class="progress-step filled"></div>
+          <div class="progress-step filled"></div>
+          <div class="progress-step"></div>
+        </div>
+        <p class="q-label">Frage 3 von 4</p>
+        <p class="q-text">Wie gut ist deine Feinmotorik ohne Smartphone?</p>
+        <div class="options">
+          <button class="opt" onclick="goTo('s4')">🎯 Ich treffe jedes Nadelöhr</button>
+          <button class="opt" onclick="goTo('s4')">🙈 Ich bin froh, wenn ich nichts um mich herum bekleckere</button>
+        </div>
       </div>
     </div>
   </div>
 
 
-  <!-- ==============================================================
-       SCREEN 4 · FRAGE 4 (Weichenstellung: Kino vs. Essen)
-  ============================================================== -->
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN 4 · FRAGE 4 – Kino vs. Essen
+       Hase (schläfriger Popcorn-Koma) + Bär (riesiger Hunger, Besteck)
+  ══════════════════════════════════════════════════════════ -->
   <div class="screen" id="s4">
     <div class="card">
-      <div class="progress">
-        <div class="progress-step filled"></div>
-        <div class="progress-step filled"></div>
-        <div class="progress-step filled"></div>
-        <div class="progress-step filled"></div>
-      </div>
-      <p class="q-label">Frage 4 von 4</p>
-      <p class="q-text">
-        Wenn der kreative Teil überstanden ist: Was hilft am
-        besten gegen die Erschöpfung?
-      </p>
-      <div class="options">
-        <!-- Kino → Wahl speichern, direkt zum Finale -->
-        <button class="opt" onclick="setChoice('Kino-Popcorn-Koma 🍿'); goTo('s6')">
-          🎬 Kino-Popcorn-Koma
-        </button>
-        <!-- Essen → Untermenü -->
-        <button class="opt" onclick="goTo('s5')">
-          🍽️ Essen!
-        </button>
+      <svg class="scene" viewBox="0 0 320 145" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bg4" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1a1a3e"/><stop offset="100%" stop-color="#2a1a40"/>
+          </linearGradient>
+        </defs>
+        <rect width="320" height="145" fill="url(#bg4)"/>
+        <!-- Kino-Sterne -->
+        <circle cx="40"  cy="20" r="1.5" fill="white" opacity=".5"/>
+        <circle cx="75"  cy="10" r="1"   fill="white" opacity=".4"/>
+        <circle cx="160" cy="15" r="1.5" fill="white" opacity=".5"/>
+        <circle cx="240" cy="8"  r="1"   fill="white" opacity=".4"/>
+        <circle cx="290" cy="22" r="1.5" fill="white" opacity=".5"/>
+        <circle cx="110" cy="25" r="1"   fill="white" opacity=".3"/>
+        <circle cx="200" cy="28" r="1.2" fill="white" opacity=".4"/>
+
+        <!-- ── HASE links (schläfrig, Popcorn) ── -->
+        <g transform="translate(18,8)">
+          <!-- Müde Ohren (hängen etwas) -->
+          <ellipse cx="22" cy="6"  rx="11" ry="26" fill="#f0ece8" transform="rotate(-6,22,6)"/>
+          <ellipse cx="62" cy="4"  rx="11" ry="26" fill="#f0ece8" transform="rotate(4,62,4)"/>
+          <ellipse cx="22" cy="6"  rx="6.5" ry="19" fill="#ffc8d0" opacity=".65" transform="rotate(-6,22,6)"/>
+          <ellipse cx="62" cy="4"  rx="6.5" ry="19" fill="#ffc8d0" opacity=".65" transform="rotate(4,62,4)"/>
+          <ellipse cx="42" cy="116" rx="30" ry="18" fill="#f0ece8"/>
+          <circle cx="42" cy="62" r="38" fill="#f0ece8"/>
+          <!-- Halbgeschlossene Augen (schläfrig) -->
+          <circle cx="27" cy="57" r="8" fill="#1a1a1a"/>
+          <rect   x="19" y="50" width="16" height="8" rx="3" fill="#f0ece8"/>
+          <circle cx="29" cy="55" r="2.5" fill="white"/>
+          <circle cx="57" cy="57" r="8" fill="#1a1a1a"/>
+          <rect   x="49" y="50" width="16" height="8" rx="3" fill="#f0ece8"/>
+          <circle cx="59" cy="55" r="2.5" fill="white"/>
+          <ellipse cx="42" cy="68" rx="18" ry="12" fill="#e8ddd8"/>
+          <ellipse cx="42" cy="66" rx="3.5" ry="2.5" fill="#ffb3ba"/>
+          <circle cx="18" cy="70" r="8" fill="#ffb3ba" opacity=".5"/>
+          <circle cx="66" cy="70" r="8" fill="#ffb3ba" opacity=".5"/>
+          <path d="M36,74 Q42,80 48,74" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+          <!-- ZZZ -->
+          <text x="66" y="44" font-size="11" fill="#a0aec0" opacity=".7">z</text>
+          <text x="75" y="35" font-size="15" fill="#a0aec0" opacity=".7">z</text>
+          <!-- Arm mit Popcorn -->
+          <path d="M72,96 Q92,88 100,96" fill="none" stroke="#f0ece8" stroke-width="11" stroke-linecap="round"/>
+          <!-- Popcorn-Box -->
+          <path d="M96,79 L101,112 L122,112 L127,79Z" fill="#e63946"/>
+          <line x1="103" y1="79" x2="100" y2="112" stroke="white" stroke-width="2" opacity=".5"/>
+          <line x1="111" y1="79" x2="111" y2="112" stroke="white" stroke-width="2" opacity=".5"/>
+          <line x1="119" y1="79" x2="122" y2="112" stroke="white" stroke-width="2" opacity=".5"/>
+          <!-- Popcorn oben -->
+          <circle cx="101" cy="75" r="6.5" fill="#fff3cd"/>
+          <circle cx="111" cy="70" r="7.5" fill="#fff3cd"/>
+          <circle cx="121" cy="74" r="6.5" fill="#fff3cd"/>
+          <circle cx="106" cy="67" r="5.5" fill="#fff3cd"/>
+          <circle cx="116" cy="67" r="5.5" fill="#fff3cd"/>
+        </g>
+
+        <!-- ── BÄR rechts (hungrig, Messer & Gabel) ── -->
+        <g transform="translate(186,8)">
+          <ellipse cx="46" cy="116" rx="32" ry="18" fill="#c4856a"/>
+          <circle cx="13" cy="19" r="13" fill="#c4856a"/>
+          <circle cx="79" cy="19" r="13" fill="#c4856a"/>
+          <circle cx="13" cy="19" r="8"  fill="#a06548"/>
+          <circle cx="79" cy="19" r="8"  fill="#a06548"/>
+          <circle cx="46" cy="56" r="40" fill="#c4856a"/>
+          <ellipse cx="46" cy="68" rx="22" ry="15" fill="#e8c4a0"/>
+          <!-- Funkelnde hungrige Augen -->
+          <circle cx="30" cy="50" r="9.5" fill="#1a1a1a"/>
+          <circle cx="62" cy="50" r="9.5" fill="#1a1a1a"/>
+          <circle cx="33" cy="47" r="3.5" fill="white"/>
+          <circle cx="65" cy="47" r="3.5" fill="white"/>
+          <circle cx="37" cy="55" r="1.5" fill="white" opacity=".7"/>
+          <circle cx="69" cy="55" r="1.5" fill="white" opacity=".7"/>
+          <ellipse cx="46" cy="66" rx="5" ry="3.5" fill="#1a1a1a"/>
+          <circle cx="18" cy="70" r="10" fill="#ffb3ba" opacity=".55"/>
+          <circle cx="74" cy="70" r="10" fill="#ffb3ba" opacity=".55"/>
+          <!-- Offener hungriger Mund -->
+          <path d="M32,79 Q46,92 60,79" fill="#cc4444"/>
+          <path d="M32,79 Q46,92 60,79" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"/>
+          <!-- Sabber-Tropfen -->
+          <path d="M44,91 Q44,98 46,99 Q48,98 48,91" fill="#a8d8f0" opacity=".7"/>
+          <!-- Linker Arm + Messer -->
+          <path d="M12,94 Q-6,82 -12,88" fill="none" stroke="#c4856a" stroke-width="11" stroke-linecap="round"/>
+          <rect x="-17" y="72" width="4.5" height="26" rx="2.2" fill="#d0d0d0"/>
+          <path d="-15,72 L-15,66" stroke="#d0d0d0" stroke-width="3"/>
+          <!-- Rechter Arm + Gabel -->
+          <path d="M80,94 Q98,82 104,88" fill="none" stroke="#c4856a" stroke-width="11" stroke-linecap="round"/>
+          <line x1="101" y1="66" x2="101" y2="90" stroke="#d0d0d0" stroke-width="2.5"/>
+          <line x1="97"  y1="66" x2="97"  y2="75" stroke="#d0d0d0" stroke-width="2"/>
+          <line x1="105" y1="66" x2="105" y2="75" stroke="#d0d0d0" stroke-width="2"/>
+        </g>
+      </svg>
+      <div class="card-body">
+        <div class="progress">
+          <div class="progress-step filled"></div>
+          <div class="progress-step filled"></div>
+          <div class="progress-step filled"></div>
+          <div class="progress-step filled"></div>
+        </div>
+        <p class="q-label">Frage 4 von 4</p>
+        <p class="q-text">
+          Wenn der kreative Teil überstanden ist:
+          Was hilft am besten gegen die Erschöpfung?
+        </p>
+        <div class="options">
+          <button class="opt" onclick="setChoice('Kino-Popcorn-Koma 🍿'); goTo('s6')">🎬 Kino-Popcorn-Koma</button>
+          <button class="opt" onclick="goTo('s5')">🍽️ Essen!</button>
+        </div>
       </div>
     </div>
   </div>
 
 
-  <!-- ==============================================================
-       SCREEN 5 · UNTERMENÜ: Welches Essen?
-       ANPASSEN: Weitere Optionen einfach nach demselben Muster
-  ============================================================== -->
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN 5 · ESSEN UNTERMENÜ
+       Frosch (Sushi) + Katze (Pizza)
+  ══════════════════════════════════════════════════════════ -->
   <div class="screen" id="s5">
     <div class="card">
-      <p class="q-label">Bonusfrage</p>
-      <p class="q-text">Alles klar! Und was soll es sein?</p>
-      <div class="options">
-        <button class="opt" onclick="setChoice('Sushi 🍣'); goTo('s6')">🍣 Sushi</button>
-        <button class="opt" onclick="setChoice('Pizza 🍕'); goTo('s6')">🍕 Pizza</button>
-        <button class="opt" onclick="setChoice('Pasta 🍝'); goTo('s6')">🍝 Pasta</button>
-        <button class="opt" onclick="setChoice('Steak 🥩'); goTo('s6')">🥩 Steak</button>
+      <svg class="scene" viewBox="0 0 320 145" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bg5" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#f0fff4"/><stop offset="100%" stop-color="#fff8e0"/>
+          </linearGradient>
+        </defs>
+        <rect width="320" height="145" fill="url(#bg5)"/>
+        <text x="157" y="60" text-anchor="middle" font-size="22" fill="#f39c12" opacity=".25">🍽</text>
+
+        <!-- ── FROSCH links (Sushi + Stäbchen) ── -->
+        <g transform="translate(20,10)">
+          <ellipse cx="46" cy="118" rx="34" ry="17" fill="#6db85c"/>
+          <!-- Frosch-Augen oben auf dem Kopf -->
+          <circle cx="24" cy="22" r="16" fill="#6db85c"/>
+          <circle cx="68" cy="22" r="16" fill="#6db85c"/>
+          <circle cx="24" cy="22" r="10" fill="white"/>
+          <circle cx="68" cy="22" r="10" fill="white"/>
+          <circle cx="26" cy="24" r="7"  fill="#1a1a1a"/>
+          <circle cx="70" cy="24" r="7"  fill="#1a1a1a"/>
+          <circle cx="28" cy="22" r="2.5" fill="white"/>
+          <circle cx="72" cy="22" r="2.5" fill="white"/>
+          <ellipse cx="46" cy="68" rx="40" ry="36" fill="#6db85c"/>
+          <!-- Breites Froschmaul -->
+          <path d="M18,80 Q46,98 74,80" fill="#3a9030"/>
+          <path d="M18,80 Q46,98 74,80" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="16" cy="74" r="8" fill="#ffb3ba" opacity=".4"/>
+          <circle cx="76" cy="74" r="8" fill="#ffb3ba" opacity=".4"/>
+          <!-- ♡ -->
+          <text x="85" y="46" font-size="13" fill="#ff8fab" opacity=".9">♡</text>
+          <!-- Arm mit Stäbchen + Sushi -->
+          <path d="M80,98 Q98,88 106,95" fill="none" stroke="#6db85c" stroke-width="11" stroke-linecap="round"/>
+          <!-- Stäbchen -->
+          <line x1="102" y1="73" x2="118" y2="94" stroke="#6b4c14" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="107" y1="69" x2="122" y2="92" stroke="#6b4c14" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- Sushi-Rolle -->
+          <rect  x="108" y="59" width="24" height="12" rx="4" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+          <rect  x="108" y="59" width="24" height="3"  rx="1.5" fill="#2d2d2d"/>
+          <rect  x="108" y="68" width="24" height="3"  rx="1.5" fill="#2d2d2d"/>
+          <ellipse cx="120" cy="63" rx="9" ry="4" fill="#ff8c69"/>
+        </g>
+
+        <!-- ── KATZE rechts (Pizza-Stück) ── -->
+        <g transform="translate(186,10)">
+          <ellipse cx="40" cy="118" rx="30" ry="17" fill="#b8c0cc"/>
+          <polygon points="10,26 2,4 26,16"  fill="#b8c0cc"/>
+          <polygon points="70,26 78,4 54,16" fill="#b8c0cc"/>
+          <polygon points="13,24 7,8 24,16"  fill="#ffc8d0"/>
+          <polygon points="67,24 73,8 56,16" fill="#ffc8d0"/>
+          <circle cx="40" cy="62" r="38" fill="#b8c0cc"/>
+          <ellipse cx="40" cy="73" rx="20" ry="13" fill="#d4dce8"/>
+          <!-- Glückliche Augen -->
+          <circle cx="27" cy="57" r="8"  fill="#1a1a1a"/>
+          <circle cx="53" cy="57" r="8"  fill="#1a1a1a"/>
+          <circle cx="30" cy="54" r="3"  fill="white"/>
+          <circle cx="56" cy="54" r="3"  fill="white"/>
+          <path d="M33,71 L40,75 L47,71" fill="none" stroke="#8090a0" stroke-width="1.5"/>
+          <circle cx="40" cy="72" r="3" fill="#8090a0"/>
+          <line x1="4"  y1="70" x2="25" y2="74" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+          <line x1="4"  y1="74" x2="25" y2="76" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+          <line x1="55" y1="74" x2="76" y2="70" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+          <line x1="55" y1="76" x2="76" y2="74" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
+          <circle cx="16" cy="72" r="7.5" fill="#ffb3ba" opacity=".45"/>
+          <circle cx="64" cy="72" r="7.5" fill="#ffb3ba" opacity=".45"/>
+          <path d="M34,80 Q40,86 46,80" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round"/>
+          <text x="54" y="44" font-size="13" fill="#ff8fab" opacity=".9">♡</text>
+          <!-- Arm mit Pizza-Stück -->
+          <path d="M10,92 Q-4,82 -12,88" fill="none" stroke="#b8c0cc" stroke-width="10" stroke-linecap="round"/>
+          <!-- Pizza-Dreieck -->
+          <path d="M-14,67 L-32,100 L4,100Z" fill="#f9a825"/>
+          <path d="M-14,67 L-32,100 L4,100" fill="none" stroke="#e65100" stroke-width="6" stroke-linejoin="round"/>
+          <!-- Belag -->
+          <circle cx="-18" cy="84" r="4.5" fill="#e53935" opacity=".8"/>
+          <circle cx="-8"  cy="89" r="4"   fill="#e53935" opacity=".8"/>
+          <circle cx="-23" cy="91" r="3.5" fill="#e53935" opacity=".8"/>
+        </g>
+      </svg>
+      <div class="card-body">
+        <p class="q-label">Bonusfrage</p>
+        <p class="q-text">Alles klar! Und was soll es sein?</p>
+        <div class="options">
+          <button class="opt" onclick="setChoice('Sushi 🍣'); goTo('s6')">🍣 Sushi</button>
+          <button class="opt" onclick="setChoice('Pizza 🍕'); goTo('s6')">🍕 Pizza</button>
+          <button class="opt" onclick="setChoice('Pasta 🍝'); goTo('s6')">🍝 Pasta</button>
+          <button class="opt" onclick="setChoice('Steak 🥩'); goTo('s6')">🥩 Steak</button>
+        </div>
       </div>
     </div>
   </div>
 
 
-  <!-- ==============================================================
+  <!-- ══════════════════════════════════════════════════════════
        SCREEN 6 · FINALE
-       Der eigentliche Ort (Keramik) wird hier erst enthüllt.
-       ANPASSEN: CONFIG.date + CONFIG.hint unten im Script-Block.
-  ============================================================== -->
+       Bär + Hase malen zusammen Keramik (die große Enthüllung!)
+  ══════════════════════════════════════════════════════════ -->
   <div class="screen" id="s6">
     <div class="card">
-      <!-- ANPASSEN: Finale-Emoji -->
-      <span class="finale-icon">🎨</span>
-      <span class="finale-badge">Das Date-Abenteuer enthüllt sich …</span>
+      <svg class="scene" viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bgF" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fff8e8"/><stop offset="100%" stop-color="#f5e8ff"/>
+          </linearGradient>
+        </defs>
+        <rect width="320" height="160" fill="url(#bgF)"/>
+        <!-- Glitzer-Sterne -->
+        <text x="148" y="22" font-size="16" fill="#f39c12" opacity=".4">✦</text>
+        <text x="170" y="18" font-size="11" fill="#d63af9" opacity=".35">✦</text>
+        <text x="156" y="140" font-size="9"  fill="#ff4e8e" opacity=".3">✦</text>
 
-      <!--
-        Der Einladungssatz.
-        #choiceText und #dateText werden per JS befüllt.
-        ANPASSEN: Satzstruktur hier bei Bedarf ändern.
-      -->
-      <p class="finale-sentence">
-        Bist du bereit für einen Nachmittag voller
-        <span class="highlight">Keramik-Katastrophen</span>,
-        gefolgt von
-        <span class="highlight" id="choiceText">…</span>
-        am kommenden
-        <span class="highlight" id="dateText">…</span>?
-      </p>
+        <!-- ── BÄR links (malt mit Pinsel an Vase) ── -->
+        <g transform="translate(14,8)">
+          <ellipse cx="46" cy="126" rx="34" ry="20" fill="#c4856a"/>
+          <circle cx="13" cy="19" r="13" fill="#c4856a"/>
+          <circle cx="79" cy="19" r="13" fill="#c4856a"/>
+          <circle cx="13" cy="19" r="8"  fill="#a06548"/>
+          <circle cx="79" cy="19" r="8"  fill="#a06548"/>
+          <circle cx="46" cy="57" r="40" fill="#c4856a"/>
+          <ellipse cx="46" cy="69" rx="22" ry="15" fill="#e8c4a0"/>
+          <!-- Glückliche strahlende Augen -->
+          <circle cx="30" cy="50" r="9"  fill="#1a1a1a"/>
+          <circle cx="62" cy="50" r="9"  fill="#1a1a1a"/>
+          <circle cx="33" cy="47" r="3.5" fill="white"/>
+          <circle cx="65" cy="47" r="3.5" fill="white"/>
+          <circle cx="37" cy="55" r="1.5" fill="white" opacity=".7"/>
+          <circle cx="69" cy="55" r="1.5" fill="white" opacity=".7"/>
+          <ellipse cx="46" cy="67" rx="4.5" ry="3.5" fill="#1a1a1a"/>
+          <circle cx="18" cy="70" r="11" fill="#ffb3ba" opacity=".55"/>
+          <circle cx="74" cy="70" r="11" fill="#ffb3ba" opacity=".55"/>
+          <!-- Breites strahlendes Lächeln -->
+          <path d="M32,78 Q46,92 60,78" fill="#cc4444"/>
+          <path d="M32,78 Q46,92 60,78" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"/>
+          <!-- Arm mit Pinsel -->
+          <path d="M82,100 Q102,90 110,98" fill="none" stroke="#c4856a" stroke-width="12" stroke-linecap="round"/>
+          <rect  x="107" y="87" width="5"   height="24" rx="2.5" fill="#5c3a10"/>
+          <ellipse cx="109.5" cy="85" rx="4" ry="8" fill="#d8d8d8"/>
+          <path  d="M106,79 Q109.5,75 113,79" fill="#c8a860"/>
+          <ellipse cx="109.5" cy="77" rx="3.5" ry="2.5" fill="#9b59b6"/>
+        </g>
 
-      <!-- ANPASSEN: Hinweis-Text (erscheint klein unter dem Satz) -->
-      <p class="finale-hint" id="finaleHint">
-        Ort &amp; Uhrzeit folgen – ich hab alles geplant 😏<br>
-        Tipp: Kleider einplanen, die du auch bekleckern darfst.
-      </p>
+        <!-- ── GETEILTE KERAMIK-VASE in der Mitte ── -->
+        <g transform="translate(126,46)">
+          <path d="M10,8 Q2,13 2,35 Q2,62 8,72 Q18,80 34,80 Q50,80 60,72 Q66,62 66,35 Q66,13 58,8 Q48,-2 34,-2 Q20,-2 10,8Z" fill="#d4b896" stroke="#b89870" stroke-width="2"/>
+          <!-- Halsring oben -->
+          <ellipse cx="34" cy="6" rx="22" ry="5" fill="#c8a880" stroke="#b89870" stroke-width="1"/>
+          <!-- Bemalte Muster drauf -->
+          <!-- Blume 1 (rosa, vom Bär) -->
+          <circle cx="22" cy="36" r="6.5" fill="#ff8fab" opacity=".9"/>
+          <circle cx="22" cy="30" r="3.5" fill="#ff8fab"/>
+          <circle cx="27" cy="36" r="3.5" fill="#ff8fab"/>
+          <circle cx="22" cy="42" r="3.5" fill="#ff8fab"/>
+          <circle cx="17" cy="36" r="3.5" fill="#ff8fab"/>
+          <circle cx="22" cy="36" r="3.5" fill="white"/>
+          <!-- Blume 2 (blau, vom Hasen) -->
+          <circle cx="46" cy="50" r="5.5" fill="#6b9fff" opacity=".9"/>
+          <circle cx="46" cy="45" r="3"   fill="#6b9fff"/>
+          <circle cx="50" cy="50" r="3"   fill="#6b9fff"/>
+          <circle cx="46" cy="55" r="3"   fill="#6b9fff"/>
+          <circle cx="42" cy="50" r="3"   fill="#6b9fff"/>
+          <circle cx="46" cy="50" r="3"   fill="white"/>
+          <!-- Stern -->
+          <text x="28" y="26" font-size="12" fill="#f39c12" opacity=".8">★</text>
+          <!-- Kleines Blümchen -->
+          <text x="12" y="58" font-size="10" fill="#27ae60" opacity=".7">✿</text>
+          <!-- Punktmuster -->
+          <circle cx="38" cy="22" r="3" fill="#d63af9" opacity=".6"/>
+          <circle cx="56" cy="30" r="2.5" fill="#ff4e8e" opacity=".6"/>
+        </g>
 
-      <button class="yes-btn" onclick="celebrate()">JA! 🎉</button>
+        <!-- ── HASE rechts (malt von der anderen Seite) ── -->
+        <g transform="translate(202,10)">
+          <ellipse cx="46" cy="126" rx="30" ry="20" fill="#f0ece8"/>
+          <ellipse cx="28" cy="5"  rx="11" ry="27" fill="#f0ece8"/>
+          <ellipse cx="64" cy="5"  rx="11" ry="27" fill="#f0ece8"/>
+          <ellipse cx="28" cy="5"  rx="6.5" ry="20" fill="#ffc8d0" opacity=".65"/>
+          <ellipse cx="64" cy="5"  rx="6.5" ry="20" fill="#ffc8d0" opacity=".65"/>
+          <circle cx="46" cy="60" r="38" fill="#f0ece8"/>
+          <ellipse cx="46" cy="72" rx="20" ry="13" fill="#e8ddd8"/>
+          <!-- Strahlende glückliche Augen -->
+          <circle cx="32" cy="54" r="8.5" fill="#1a1a1a"/>
+          <circle cx="60" cy="54" r="8.5" fill="#1a1a1a"/>
+          <circle cx="35" cy="51" r="3"   fill="white"/>
+          <circle cx="63" cy="51" r="3"   fill="white"/>
+          <circle cx="39" cy="58" r="1.5" fill="white" opacity=".7"/>
+          <circle cx="67" cy="58" r="1.5" fill="white" opacity=".7"/>
+          <ellipse cx="46" cy="70" rx="3.5" ry="2.5" fill="#ffb3ba"/>
+          <circle cx="20" cy="72" r="11" fill="#ffb3ba" opacity=".5"/>
+          <circle cx="72" cy="72" r="11" fill="#ffb3ba" opacity=".5"/>
+          <path d="M38,79 Q46,88 54,79" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round"/>
+          <!-- Arm mit Pinsel (zur Vase zeigend) -->
+          <path d="M12,98 Q-8,88 -16,95" fill="none" stroke="#f0ece8" stroke-width="12" stroke-linecap="round"/>
+          <rect  x="-23" y="86" width="5"   height="24" rx="2.5" fill="#5c3a10" transform="rotate(8,-20,98)"/>
+          <ellipse cx="-20" cy="84" rx="4" ry="8" fill="#d8d8d8" transform="rotate(8,-20,84)"/>
+          <ellipse cx="-20" cy="80" rx="3.5" ry="2.5" fill="#6b9fff"/>
+        </g>
+
+        <!-- Herz über der Vase -->
+        <path d="M159,16 C159,12 154,8 154,12 C154,8 149,12 149,16 C149,21 154,26 154,26 C154,26 159,21 159,16Z" fill="#ff8fab" opacity=".85"/>
+      </svg>
+      <div class="card-body">
+        <span class="finale-badge">Das Date-Abenteuer enthüllt sich …</span>
+        <p class="finale-sentence">
+          Bist du bereit für einen Nachmittag voller
+          <span class="highlight">Keramik-Katastrophen</span>,
+          gefolgt von
+          <span class="highlight" id="choiceText">…</span>
+          am kommenden
+          <span class="highlight" id="dateText">…</span>?
+        </p>
+        <!-- ANPASSEN: Hinweis-Text -->
+        <p class="finale-hint" id="finaleHint">
+          Ort &amp; Uhrzeit folgen – ich hab alles geplant 😏<br>
+          Tipp: Kleider einplanen, die du auch bekleckern darfst.
+        </p>
+        <button class="yes-btn" onclick="celebrate()">JA! 🎉</button>
+      </div>
     </div>
   </div>
 
 </div><!-- /game -->
 
 
-<!-- ==============================================================
-     CELEBRATION-OVERLAY
-     Erscheint nach Klick auf „JA!"
-     ANPASSEN: Config.celebrationTitle + Config.celebrationBody
-============================================================== -->
+<!-- CELEBRATION OVERLAY -->
 <div id="celebration">
   <div class="celeb-card">
-    <!-- ANPASSEN: Emoji im Modal -->
     <span class="celeb-icon" id="celebIcon">🥂</span>
     <p class="celeb-title" id="celebTitle">Perfekt – es ist ein Date! 💜</p>
-    <p class="celeb-body"  id="celebBody">
-      Ich freu mich so sehr! Du kriegst alle Details rechtzeitig.
-    </p>
-    <button class="celeb-close"
-            onclick="document.getElementById('celebration').classList.remove('show')">
-      Schließen
-    </button>
+    <p class="celeb-body"  id="celebBody">Ich freu mich so sehr! Du kriegst alle Details rechtzeitig.</p>
+    <button class="celeb-close" onclick="document.getElementById('celebration').classList.remove('show')">Schließen</button>
   </div>
 </div>
 
 
 <script>
   /* ==============================================================
-     KONFIGURATION
-     ↓ Alles, was du regelmäßig anpassen musst, steht hier. ↓
+     KONFIGURATION – hier anpassen
   ============================================================== */
   const CONFIG = {
-
-    // ANPASSEN: Datum des Dates (erscheint im Finale-Satz)
+    // ANPASSEN: Datum des Dates
     date: "Samstag, 7. Juni",
-
-    // ANPASSEN: Kleiner Hinweis-Text unter dem Einladungssatz
-    // Auf false setzen, um ihn auszublenden.
-    hint: "Ort &amp; Uhrzeit folgen – ich hab alles geplant 😏<br>" +
-          "Tipp: Kleider einplanen, die du auch bekleckern darfst.",
-
-    // ANPASSEN: Reaktion, die nach Klick auf „JA!" erscheint
+    // ANPASSEN: Hinweis unter dem Einladungssatz (false = ausblenden)
+    hint: "Ort &amp; Uhrzeit folgen – ich hab alles geplant 😏<br>Tipp: Kleider einplanen, die du auch bekleckern darfst.",
+    // ANPASSEN: Reaktion nach JA!-Klick
     celebration: {
       icon:  "🥂",
       title: "Perfekt – es ist ein Date! 💜",
@@ -620,84 +930,37 @@
     },
   };
 
-
-  /* ==============================================================
-     INTERNE VARIABLEN
-  ============================================================== */
-  let currentChoice = "";   // Speichert Wahl aus Schritt 4 (Kino / Essen-Art)
-
-
-  /* ==============================================================
-     goTo(id)
-     Wechselt den aktiven Screen mit Fade-Up-Animation.
-     id = String, z.B. "s2"
-  ============================================================== */
   function goTo(id) {
     const current = document.querySelector(".screen.active");
     const next    = document.getElementById(id);
     if (!next || next === current) return;
-
     if (current) current.classList.remove("active");
     next.classList.add("active");
-
-    // Sanft nach oben scrollen (wichtig auf Mobile)
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-
-  /* ==============================================================
-     setChoice(text)
-     Speichert die Wahl aus Frage 4 und trägt sie im Finale ein.
-     Muss VOR goTo('s6') aufgerufen werden.
-  ============================================================== */
   function setChoice(text) {
-    currentChoice = text;
     document.getElementById("choiceText").textContent = text;
   }
 
-
-  /* ==============================================================
-     celebrate()
-     Zeigt das Celebration-Overlay nach „JA!"-Klick.
-  ============================================================== */
   function celebrate() {
     document.getElementById("celebration").classList.add("show");
   }
 
-
-  /* ==============================================================
-     init()
-     Setzt alle Werte aus CONFIG in das DOM ein.
-     Wird einmalig beim Laden ausgeführt.
-  ============================================================== */
   function init() {
-    // Datum in die Finale-Seite
     const dateEl = document.getElementById("dateText");
     if (dateEl) dateEl.textContent = CONFIG.date;
-
-    // Optionaler Hinweis-Text
     const hintEl = document.getElementById("finaleHint");
     if (hintEl) {
-      if (CONFIG.hint) {
-        hintEl.innerHTML = CONFIG.hint;
-        hintEl.style.display = "";
-      } else {
-        hintEl.style.display = "none";
-      }
+      if (CONFIG.hint) hintEl.innerHTML = CONFIG.hint;
+      else hintEl.style.display = "none";
     }
-
-    // Celebration-Modal
-    const iconEl  = document.getElementById("celebIcon");
-    const titleEl = document.getElementById("celebTitle");
-    const bodyEl  = document.getElementById("celebBody");
-    if (iconEl)  iconEl.textContent  = CONFIG.celebration.icon;
-    if (titleEl) titleEl.textContent = CONFIG.celebration.title;
-    if (bodyEl)  bodyEl.textContent  = CONFIG.celebration.body;
+    document.getElementById("celebIcon").textContent  = CONFIG.celebration.icon;
+    document.getElementById("celebTitle").textContent = CONFIG.celebration.title;
+    document.getElementById("celebBody").textContent  = CONFIG.celebration.body;
   }
 
-  // Ausführen, sobald das DOM bereit ist
   document.addEventListener("DOMContentLoaded", init);
 </script>
-
 </body>
 </html>
