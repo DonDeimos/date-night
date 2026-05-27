@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- ANPASSEN: Browser-Tab-Titel -->
+  <title>Eine geheime Mission ...</title>
+
+  <style>
+    /* ================================================================
+       DESIGN-VARIABLEN
+       Alle Farben, Radien & Übergänge an einem Ort – hier anpassen.
+    ================================================================ */
+    :root {
+      /* Seiten-Hintergrund */
+      --bg-a: #0f0c29;
+      --bg-b: #302b63;
+      --bg-c: #24243e;
+
+      /* Akzentgradient (Buttons, Highlights, Progress) */
+      --accent-1: #d63af9;
+      --accent-2: #ff4e8e;
+
+      /* Karten-Hintergrund & Schatten */
+      --card-bg:     #ffffff;
+      --card-shadow: 0 4px 8px rgba(0,0,0,.12),
+                     0 24px 64px rgba(0,0,0,.35),
+                     inset 0 1px 0 rgba(255,255,255,.8);
+      --card-radius: 26px;
+
+      /* Button-Ruhezustand */
+      --btn-bg:     #f5f6fa;
+      --btn-border: #e4e7f0;
+      --btn-radius: 16px;
+
+      /* Texte */
+      --text-900: #14143a;
+      --text-500: #4a5568;
+      --text-300: #a0aec0;
+
+      /* Übergangs-Dauer */
+      --speed-btn:    .2s;
+      --speed-screen: .42s;
+    }
+
+    /* ================================================================
+       RESET & GRUNDLAYOUT
+    ================================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui,
+                   "Helvetica Neue", sans-serif;
+      background: linear-gradient(145deg, var(--bg-a) 0%, var(--bg-b) 50%, var(--bg-c) 100%);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 28px 16px 56px;
+    }
+
+    /* ================================================================
+       SPIELFELD – begrenzter Container
+    ================================================================ */
+    .game {
+      width: 100%;
+      max-width: 500px;
+      padding-top: 20px;
+    }
+
+    /* ================================================================
+       KARTE – weißer Inhalt-Container
+    ================================================================ */
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--card-radius);
+      padding: 36px 28px 32px;
+      box-shadow: var(--card-shadow);
+    }
+
+    @media (max-width: 380px) {
+      .card { padding: 28px 20px 24px; }
+    }
+
+    /* ================================================================
+       SCREENS
+       Jede „Seite" ist ein .screen-Div.
+       Standard: unsichtbar (display:none).
+       .active → eingeblendet mit Slide-Up-Animation.
+    ================================================================ */
+    .screen { display: none; }
+
+    .screen.active {
+      display: block;
+      animation: fadeUp var(--speed-screen) cubic-bezier(.25,.46,.45,.94) both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ================================================================
+       FORTSCHRITTSBALKEN
+       Vier Segmente, befüllte werden per .filled markiert.
+    ================================================================ */
+    .progress {
+      display: flex;
+      gap: 7px;
+      margin-bottom: 26px;
+    }
+
+    .progress-step {
+      flex: 1;
+      height: 5px;
+      border-radius: 3px;
+      background: var(--btn-border);
+      transition: background .35s;
+    }
+
+    .progress-step.filled {
+      background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+    }
+
+    /* ================================================================
+       FRAGEN-LABEL (z.B. „Frage 1 von 4")
+    ================================================================ */
+    .q-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      /* Farbverlauf auf Text */
+      background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+
+    /* ================================================================
+       FRAGEN-TEXT
+    ================================================================ */
+    .q-text {
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.55;
+      color: var(--text-900);
+      margin-bottom: 26px;
+    }
+
+    @media (min-width: 400px) {
+      .q-text { font-size: 20px; }
+    }
+
+    /* ================================================================
+       ANTWORT-BUTTONS
+    ================================================================ */
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .opt {
+      background: var(--btn-bg);
+      border: 2px solid var(--btn-border);
+      border-radius: var(--btn-radius);
+      padding: 14px 18px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-900);
+      text-align: left;
+      line-height: 1.45;
+      cursor: pointer;
+      transition:
+        background var(--speed-btn),
+        border-color var(--speed-btn),
+        color var(--speed-btn),
+        transform var(--speed-btn),
+        box-shadow var(--speed-btn);
+    }
+
+    .opt:hover,
+    .opt:focus-visible {
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      border-color: transparent;
+      color: #fff;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 22px rgba(214, 58, 249, .35);
+      outline: none;
+    }
+
+    .opt:active { transform: translateY(0); }
+
+    /* ================================================================
+       INTRO-SCREEN
+    ================================================================ */
+    .intro-icon {
+      font-size: 60px;
+      display: block;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .intro-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-900);
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .intro-sub {
+      font-size: 15px;
+      color: var(--text-500);
+      text-align: center;
+      line-height: 1.65;
+      margin-bottom: 32px;
+    }
+
+    /* Haupt-CTA-Button (Intro & Finale) */
+    .cta-btn {
+      display: block;
+      width: 100%;
+      padding: 18px;
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      color: #fff;
+      border: none;
+      border-radius: var(--btn-radius);
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: .3px;
+      cursor: pointer;
+      transition: transform var(--speed-btn), box-shadow var(--speed-btn), opacity var(--speed-btn);
+    }
+
+    .cta-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(214, 58, 249, .42);
+      opacity: .93;
+    }
+
+    /* ================================================================
+       FINALE-SCREEN
+    ================================================================ */
+    .finale-icon {
+      font-size: 64px;
+      display: block;
+      text-align: center;
+      margin-bottom: 8px;
+      animation: float 2.8s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-9px); }
+    }
+
+    .finale-badge {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      text-align: center;
+      background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 22px;
+    }
+
+    /* Der Einladungs-Satz (großer Absatz) */
+    .finale-sentence {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-900);
+      text-align: center;
+      line-height: 1.7;
+      margin-bottom: 28px;
+    }
+
+    @media (min-width: 400px) {
+      .finale-sentence { font-size: 20px; }
+    }
+
+    /* Hervorgehobene Spans innerhalb des Satzes */
+    .highlight {
+      font-weight: 800;
+      background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Kleiner Hinweis-Text */
+    .finale-hint {
+      font-size: 13px;
+      color: var(--text-300);
+      text-align: center;
+      font-style: italic;
+      line-height: 1.65;
+      margin-bottom: 28px;
+    }
+
+    /* JA!-Button */
+    .yes-btn {
+      display: block;
+      width: 100%;
+      padding: 20px;
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      color: #fff;
+      border: none;
+      border-radius: var(--btn-radius);
+      font-family: inherit;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: transform var(--speed-btn), box-shadow var(--speed-btn);
+    }
+
+    .yes-btn:hover {
+      transform: translateY(-3px) scale(1.01);
+      box-shadow: 0 14px 38px rgba(214, 58, 249, .5);
+    }
+
+    .yes-btn:active { transform: translateY(0) scale(1); }
+
+    /* ================================================================
+       CELEBRATION-OVERLAY (nach Klick auf „JA!")
+    ================================================================ */
+    #celebration {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 8, 28, .75);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    #celebration.show { display: flex; }
+
+    .celeb-card {
+      background: #fff;
+      border-radius: 28px;
+      padding: 44px 32px;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+      animation: popIn .45s cubic-bezier(.175,.885,.32,1.275);
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(.75); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .celeb-icon  { font-size: 62px; display: block; margin-bottom: 14px; }
+    .celeb-title { font-size: 22px; font-weight: 700; color: var(--text-900); margin-bottom: 12px; }
+    .celeb-body  { font-size: 15px; color: var(--text-500); line-height: 1.65; margin-bottom: 24px; }
+
+    .celeb-close {
+      font-size: 13px;
+      color: var(--text-300);
+      cursor: pointer;
+      text-decoration: underline;
+      background: none;
+      border: none;
+      font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+
+<div class="game">
+
+  <!-- ==============================================================
+       SCREEN 0 · INTRO
+       ANPASSEN: .intro-title, .intro-sub, Button-Text
+  ============================================================== -->
+  <div class="screen active" id="s0">
+    <div class="card">
+      <!-- ANPASSEN: Intro-Emoji -->
+      <span class="intro-icon">🔍</span>
+      <!-- ANPASSEN: Überschrift -->
+      <h1 class="intro-title">Geheime Date-Mission</h1>
+      <!-- ANPASSEN: Einleitung -->
+      <p class="intro-sub">
+        Bevor ich dir verrate, was ich plane, brauchst du erst
+        eine Art&nbsp;&hellip; Eignungstest. Keine Angst – er
+        ist lösbar. Meistens.
+      </p>
+      <button class="cta-btn" onclick="goTo('s1')">Test starten →</button>
+    </div>
+  </div>
+
+
+  <!-- ==============================================================
+       SCREEN 1 · FRAGE 1
+       ANPASSEN: .q-text, die beiden .opt (Text + onclick-Ziel)
+  ============================================================== -->
+  <div class="screen" id="s1">
+    <div class="card">
+      <!-- Fortschrittsbalken: 1 von 4 befüllt -->
+      <div class="progress">
+        <div class="progress-step filled"></div>
+        <div class="progress-step"></div>
+        <div class="progress-step"></div>
+        <div class="progress-step"></div>
+      </div>
+      <p class="q-label">Frage 1 von 4</p>
+      <p class="q-text">
+        Bist du heute bereit, dich einer Herausforderung zu stellen,
+        die deine Geduld (und meine künstlerischen Fähigkeiten)
+        massiv auf die Probe stellt?
+      </p>
+      <div class="options">
+        <!-- Beide Antworten führen zur selben nächsten Frage -->
+        <button class="opt" onclick="goTo('s2')">
+          💪 Ich liebe Herausforderungen
+        </button>
+        <button class="opt" onclick="goTo('s2')">
+          🤔 Hängt davon ab, wie sehr wir uns blamieren
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==============================================================
+       SCREEN 2 · FRAGE 2
+  ============================================================== -->
+  <div class="screen" id="s2">
+    <div class="card">
+      <div class="progress">
+        <div class="progress-step filled"></div>
+        <div class="progress-step filled"></div>
+        <div class="progress-step"></div>
+        <div class="progress-step"></div>
+      </div>
+      <p class="q-label">Frage 2 von 4</p>
+      <p class="q-text">
+        Wir brauchen eine Umgebung, in der es okay ist, wenn wir
+        uns mit „Dreck" beschmutzen. Welcher Vibe passt zu uns?
+      </p>
+      <div class="options">
+        <button class="opt" onclick="goTo('s3')">
+          🧘 Stille, konzentrierte Umgebung
+        </button>
+        <button class="opt" onclick="goTo('s3')">
+          🎉 Lautes, kreatives Chaos
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==============================================================
+       SCREEN 3 · FRAGE 3
+  ============================================================== -->
+  <div class="screen" id="s3">
+    <div class="card">
+      <div class="progress">
+        <div class="progress-step filled"></div>
+        <div class="progress-step filled"></div>
+        <div class="progress-step filled"></div>
+        <div class="progress-step"></div>
+      </div>
+      <p class="q-label">Frage 3 von 4</p>
+      <p class="q-text">
+        Wie gut ist deine Feinmotorik ohne Smartphone?
+      </p>
+      <div class="options">
+        <button class="opt" onclick="goTo('s4')">
+          🎯 Ich treffe jedes Nadelöhr
+        </button>
+        <button class="opt" onclick="goTo('s4')">
+          🙈 Ich bin froh, wenn ich nichts um mich herum bekleckere
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==============================================================
+       SCREEN 4 · FRAGE 4 (Weichenstellung: Kino vs. Essen)
+  ============================================================== -->
+  <div class="screen" id="s4">
+    <div class="card">
+      <div class="progress">
+        <div class="progress-step filled"></div>
+        <div class="progress-step filled"></div>
+        <div class="progress-step filled"></div>
+        <div class="progress-step filled"></div>
+      </div>
+      <p class="q-label">Frage 4 von 4</p>
+      <p class="q-text">
+        Wenn der kreative Teil überstanden ist: Was hilft am
+        besten gegen die Erschöpfung?
+      </p>
+      <div class="options">
+        <!-- Kino → Wahl speichern, direkt zum Finale -->
+        <button class="opt" onclick="setChoice('Kino-Popcorn-Koma 🍿'); goTo('s6')">
+          🎬 Kino-Popcorn-Koma
+        </button>
+        <!-- Essen → Untermenü -->
+        <button class="opt" onclick="goTo('s5')">
+          🍽️ Essen!
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==============================================================
+       SCREEN 5 · UNTERMENÜ: Welches Essen?
+       ANPASSEN: Weitere Optionen einfach nach demselben Muster
+  ============================================================== -->
+  <div class="screen" id="s5">
+    <div class="card">
+      <p class="q-label">Bonusfrage</p>
+      <p class="q-text">Alles klar! Und was soll es sein?</p>
+      <div class="options">
+        <button class="opt" onclick="setChoice('Sushi 🍣'); goTo('s6')">🍣 Sushi</button>
+        <button class="opt" onclick="setChoice('Pizza 🍕'); goTo('s6')">🍕 Pizza</button>
+        <button class="opt" onclick="setChoice('Pasta 🍝'); goTo('s6')">🍝 Pasta</button>
+        <button class="opt" onclick="setChoice('Steak 🥩'); goTo('s6')">🥩 Steak</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==============================================================
+       SCREEN 6 · FINALE
+       Der eigentliche Ort (Keramik) wird hier erst enthüllt.
+       ANPASSEN: CONFIG.date + CONFIG.hint unten im Script-Block.
+  ============================================================== -->
+  <div class="screen" id="s6">
+    <div class="card">
+      <!-- ANPASSEN: Finale-Emoji -->
+      <span class="finale-icon">🎨</span>
+      <span class="finale-badge">Das Date-Abenteuer enthüllt sich …</span>
+
+      <!--
+        Der Einladungssatz.
+        #choiceText und #dateText werden per JS befüllt.
+        ANPASSEN: Satzstruktur hier bei Bedarf ändern.
+      -->
+      <p class="finale-sentence">
+        Bist du bereit für einen Nachmittag voller
+        <span class="highlight">Keramik-Katastrophen</span>,
+        gefolgt von
+        <span class="highlight" id="choiceText">…</span>
+        am kommenden
+        <span class="highlight" id="dateText">…</span>?
+      </p>
+
+      <!-- ANPASSEN: Hinweis-Text (erscheint klein unter dem Satz) -->
+      <p class="finale-hint" id="finaleHint">
+        Ort &amp; Uhrzeit folgen – ich hab alles geplant 😏<br>
+        Tipp: Kleider einplanen, die du auch bekleckern darfst.
+      </p>
+
+      <button class="yes-btn" onclick="celebrate()">JA! 🎉</button>
+    </div>
+  </div>
+
+</div><!-- /game -->
+
+
+<!-- ==============================================================
+     CELEBRATION-OVERLAY
+     Erscheint nach Klick auf „JA!"
+     ANPASSEN: Config.celebrationTitle + Config.celebrationBody
+============================================================== -->
+<div id="celebration">
+  <div class="celeb-card">
+    <!-- ANPASSEN: Emoji im Modal -->
+    <span class="celeb-icon" id="celebIcon">🥂</span>
+    <p class="celeb-title" id="celebTitle">Perfekt – es ist ein Date! 💜</p>
+    <p class="celeb-body"  id="celebBody">
+      Ich freu mich so sehr! Du kriegst alle Details rechtzeitig.
+    </p>
+    <button class="celeb-close"
+            onclick="document.getElementById('celebration').classList.remove('show')">
+      Schließen
+    </button>
+  </div>
+</div>
+
+
+<script>
+  /* ==============================================================
+     KONFIGURATION
+     ↓ Alles, was du regelmäßig anpassen musst, steht hier. ↓
+  ============================================================== */
+  const CONFIG = {
+
+    // ANPASSEN: Datum des Dates (erscheint im Finale-Satz)
+    date: "Samstag, 7. Juni",
+
+    // ANPASSEN: Kleiner Hinweis-Text unter dem Einladungssatz
+    // Auf false setzen, um ihn auszublenden.
+    hint: "Ort &amp; Uhrzeit folgen – ich hab alles geplant 😏<br>" +
+          "Tipp: Kleider einplanen, die du auch bekleckern darfst.",
+
+    // ANPASSEN: Reaktion, die nach Klick auf „JA!" erscheint
+    celebration: {
+      icon:  "🥂",
+      title: "Perfekt – es ist ein Date! 💜",
+      body:  "Ich freu mich so sehr! Du kriegst alle Details rechtzeitig.",
+    },
+  };
+
+
+  /* ==============================================================
+     INTERNE VARIABLEN
+  ============================================================== */
+  let currentChoice = "";   // Speichert Wahl aus Schritt 4 (Kino / Essen-Art)
+
+
+  /* ==============================================================
+     goTo(id)
+     Wechselt den aktiven Screen mit Fade-Up-Animation.
+     id = String, z.B. "s2"
+  ============================================================== */
+  function goTo(id) {
+    const current = document.querySelector(".screen.active");
+    const next    = document.getElementById(id);
+    if (!next || next === current) return;
+
+    if (current) current.classList.remove("active");
+    next.classList.add("active");
+
+    // Sanft nach oben scrollen (wichtig auf Mobile)
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+
+  /* ==============================================================
+     setChoice(text)
+     Speichert die Wahl aus Frage 4 und trägt sie im Finale ein.
+     Muss VOR goTo('s6') aufgerufen werden.
+  ============================================================== */
+  function setChoice(text) {
+    currentChoice = text;
+    document.getElementById("choiceText").textContent = text;
+  }
+
+
+  /* ==============================================================
+     celebrate()
+     Zeigt das Celebration-Overlay nach „JA!"-Klick.
+  ============================================================== */
+  function celebrate() {
+    document.getElementById("celebration").classList.add("show");
+  }
+
+
+  /* ==============================================================
+     init()
+     Setzt alle Werte aus CONFIG in das DOM ein.
+     Wird einmalig beim Laden ausgeführt.
+  ============================================================== */
+  function init() {
+    // Datum in die Finale-Seite
+    const dateEl = document.getElementById("dateText");
+    if (dateEl) dateEl.textContent = CONFIG.date;
+
+    // Optionaler Hinweis-Text
+    const hintEl = document.getElementById("finaleHint");
+    if (hintEl) {
+      if (CONFIG.hint) {
+        hintEl.innerHTML = CONFIG.hint;
+        hintEl.style.display = "";
+      } else {
+        hintEl.style.display = "none";
+      }
+    }
+
+    // Celebration-Modal
+    const iconEl  = document.getElementById("celebIcon");
+    const titleEl = document.getElementById("celebTitle");
+    const bodyEl  = document.getElementById("celebBody");
+    if (iconEl)  iconEl.textContent  = CONFIG.celebration.icon;
+    if (titleEl) titleEl.textContent = CONFIG.celebration.title;
+    if (bodyEl)  bodyEl.textContent  = CONFIG.celebration.body;
+  }
+
+  // Ausführen, sobald das DOM bereit ist
+  document.addEventListener("DOMContentLoaded", init);
+</script>
+
+</body>
+</html>
