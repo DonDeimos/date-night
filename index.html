@@ -1,953 +1,889 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Eine geheime Mission ...</title>
-  <style>
-    :root {
-      --bg-a: #0f0c29; --bg-b: #302b63; --bg-c: #24243e;
-      --accent-1: #d63af9; --accent-2: #ff4e8e;
-      --card-bg: #ffffff;
-      --card-shadow: 0 4px 8px rgba(0,0,0,.14), 0 24px 64px rgba(0,0,0,.38);
-      --card-radius: 26px;
-      --btn-bg: #f5f6fa; --btn-border: #e4e7f0; --btn-radius: 16px;
-      --text-900: #14143a; --text-500: #4a5568; --text-300: #a0aec0;
-      --speed-btn: .2s; --speed-screen: .42s;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Eine kleine Einladung …</title>
 
-    body {
-      min-height: 100vh;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-      background: linear-gradient(145deg, var(--bg-a) 0%, var(--bg-b) 50%, var(--bg-c) 100%);
-      display: flex; align-items: flex-start; justify-content: center;
-      padding: 28px 16px 56px;
-      overflow-x: hidden; /* verhindert horizontalen Scroll durch überstehende Tiere */
-    }
+<!--
+  ============================================================
+   DATE-EINLADUNG  ·  Single-Page-App  ·  index.html
+  ============================================================
+   Alles (HTML + CSS + JS) steckt in DIESER einen Datei.
+   Direkt auf GitHub Pages hochladbar.
 
-    /* Spielfeld – extra padding damit Tiere über/unter Karte Platz haben */
-    .game { width: 100%; max-width: 480px; padding-top: 72px; padding-bottom: 72px; }
+   👉 SCHNELL ANPASSEN (alles im <script>-Block ganz unten):
+      • KONFIG  -> Datum, Finale-Texte, Belohnung
+      • FRAGEN  -> Fragen, Optionen & welche Tierchen je Seite (szene)
+      • TIERE   -> die Kawaii-Tierchen (eigene Inline-SVGs, Farben/Props)
+  ============================================================
+-->
 
-    /* Karte: overflow:visible damit Tiere über Kartenrand hinausragen können */
-    .card {
-      background: var(--card-bg);
-      border-radius: var(--card-radius);
-      box-shadow: var(--card-shadow);
-      position: relative; /* Ankerpunkt für absolute Tier-Positionierung */
-      overflow: visible;
-    }
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Caveat:wght@600;700&display=swap" rel="stylesheet" />
 
-    /* Inhalt der Karte */
-    .card-body { padding: 28px 28px 32px; }
-    @media (max-width: 380px) { .card-body { padding: 22px 20px 26px; } }
+<style>
+  /* ============================================================
+     1) DESIGN-TOKENS  –  Farben/Look zentral ändern
+     ============================================================ */
+  :root {
+    --creme:        #fdf6ec;
+    --creme-2:      #f7ecd9;
+    --terrakotta:   #d8744f;
+    --terrakotta-d: #b9543a;
+    --petrol:       #3f7d78;
+    --petrol-d:     #2f5f5b;
+    --tinte:        #45382f;
+    --tinte-soft:   #6e5f53;
+    --schatten:     0 18px 50px -18px rgba(69, 56, 47, .45);
+    --radius:       26px;
+    --max-breite:   560px;
+  }
 
-    /* ── Tiere ─────────────────────────────────────────────── */
-    /* Jedes Tier ist absolut relativ zur .card positioniert */
-    .a {
-      position: absolute;
-      pointer-events: none;
-      z-index: 4; /* vor der Karte, damit Körper über Kante hinausragt */
-    }
+  /* ============================================================
+     2) GRUNDLAYOUT  –  Mobile-First
+     ============================================================ */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
 
-    /* ── Screen-Übergänge ──────────────────────────────────── */
-    .screen { display: none; }
-    .screen.active {
-      display: block;
-      animation: fadeUp var(--speed-screen) cubic-bezier(.25,.46,.45,.94) both;
-    }
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(22px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+  body {
+    font-family: "Fraunces", Georgia, serif;
+    color: var(--tinte);
+    background:
+      radial-gradient(circle at 15% 12%, rgba(216,116,79,.16), transparent 42%),
+      radial-gradient(circle at 85% 88%, rgba(63,125,120,.16), transparent 45%),
+      var(--creme);
+    min-height: 100dvh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 22px;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none;
+    background-image: radial-gradient(rgba(69,56,47,.05) 1px, transparent 1px);
+    background-size: 22px 22px; z-index: 0;
+  }
 
-    /* ── Fortschrittsbalken ──────────────────────────────────── */
-    .progress { display: flex; gap: 7px; margin-bottom: 26px; }
-    .progress-step { flex: 1; height: 5px; border-radius: 3px; background: var(--btn-border); transition: background .35s; }
-    .progress-step.filled { background: linear-gradient(90deg, var(--accent-1), var(--accent-2)); }
+  /* ============================================================
+     3) KARTE
+     ============================================================ */
+  .karte {
+    position: relative; z-index: 1;
+    width: 100%; max-width: var(--max-breite);
+    background: linear-gradient(180deg, #fffdf9, var(--creme-2));
+    border: 1px solid rgba(69,56,47,.08);
+    border-radius: var(--radius);
+    box-shadow: var(--schatten);
+    padding: 34px 26px 30px;
+    overflow: hidden;
+  }
+  .karte::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 6px;
+    background: linear-gradient(90deg, var(--terrakotta), #f0c987, var(--petrol));
+  }
 
-    /* ── Fragen-Label & Text ─────────────────────────────────── */
-    .q-label {
-      font-size: 11px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
-      background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      margin-bottom: 12px;
-    }
-    .q-text { font-size: 18px; font-weight: 600; line-height: 1.55; color: var(--text-900); margin-bottom: 26px; }
-    @media (min-width: 400px) { .q-text { font-size: 20px; } }
+  /* ============================================================
+     4) FORTSCHRITTS-PUNKTE
+     ============================================================ */
+  .fortschritt { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; }
+  .punkt {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: rgba(69,56,47,.16); transition: all .4s ease;
+  }
+  .punkt.aktiv  { background: var(--terrakotta); transform: scale(1.25); }
+  .punkt.fertig { background: var(--petrol); }
 
-    /* ── Antwort-Buttons ─────────────────────────────────────── */
-    .options { display: flex; flex-direction: column; gap: 10px; }
-    .opt {
-      background: var(--btn-bg); border: 2px solid var(--btn-border); border-radius: var(--btn-radius);
-      padding: 14px 18px; font-family: inherit; font-size: 15px; font-weight: 500;
-      color: var(--text-900); text-align: left; line-height: 1.45; cursor: pointer;
-      transition: background var(--speed-btn), border-color var(--speed-btn), color var(--speed-btn),
-                  transform var(--speed-btn), box-shadow var(--speed-btn);
-    }
-    .opt:hover, .opt:focus-visible {
-      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-      border-color: transparent; color: #fff;
-      transform: translateY(-2px); box-shadow: 0 8px 22px rgba(214,58,249,.35); outline: none;
-    }
-    .opt:active { transform: translateY(0); }
+  /* ============================================================
+     5) TIER-SZENE  (2–3 Kawaii-Tierchen pro Seite)
+     ============================================================ */
+  .szene {
+    display: flex; justify-content: center; align-items: flex-end;
+    gap: 5px; margin: 2px 0 16px; min-height: 74px; flex-wrap: nowrap;
+  }
+  .tier {
+    width: 62px; height: auto; flex: 0 0 auto;
+    pointer-events: none;                 /* blockiert nie die Buttons */
+    filter: drop-shadow(0 6px 6px rgba(69,56,47,.18));
+    transform-origin: center bottom;
+    animation: bob 3.2s ease-in-out infinite;
+  }
+  .tier.vase { width: 58px; animation-duration: 4s; }
+  /* leichtes „Verteilen" durch versetzte Höhe + Neigung */
+  .szene .tier:nth-child(1) { --r: -4deg; animation-delay: 0s;  align-self: flex-start; }
+  .szene .tier:nth-child(2) { --r:  3deg; animation-delay: .5s; }
+  .szene .tier:nth-child(3) { --r: -2deg; animation-delay: 1s;  align-self: flex-start; }
+  @keyframes bob {
+    0%,100% { transform: translateY(0)    rotate(var(--r, 0deg)); }
+    50%     { transform: translateY(-6px) rotate(var(--r, 0deg)); }
+  }
 
-    /* ── Intro ───────────────────────────────────────────────── */
-    .intro-title { font-size: 24px; font-weight: 700; color: var(--text-900); text-align: center; margin-bottom: 10px; }
-    .intro-sub   { font-size: 15px; color: var(--text-500); text-align: center; line-height: 1.65; margin-bottom: 32px; }
-    .cta-btn {
-      display: block; width: 100%; padding: 18px;
-      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-      color: #fff; border: none; border-radius: var(--btn-radius);
-      font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer;
-      transition: transform var(--speed-btn), box-shadow var(--speed-btn), opacity var(--speed-btn);
-    }
-    .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(214,58,249,.42); opacity:.93; }
+  /* ============================================================
+     6) STEP / FRAGE  +  Fading
+     ============================================================ */
+  .step { display: none; }
+  .step.sichtbar { display: block; }
+  @keyframes einblenden {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .step.sichtbar { animation: einblenden .5s cubic-bezier(.22,.61,.36,1) both; }
 
-    /* ── Finale ──────────────────────────────────────────────── */
-    .finale-badge {
-      display: block; font-size: 11px; font-weight: 700; letter-spacing: 2.5px;
-      text-transform: uppercase; text-align: center;
-      background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      margin-bottom: 16px;
-    }
-    .finale-sentence {
-      font-size: 18px; font-weight: 600; color: var(--text-900);
-      text-align: center; line-height: 1.7; margin-bottom: 24px;
-    }
-    @media (min-width: 400px) { .finale-sentence { font-size: 20px; } }
-    .highlight {
-      font-weight: 800;
-      background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    }
-    .finale-hint { font-size: 13px; color: var(--text-300); text-align: center; font-style: italic; line-height: 1.65; margin-bottom: 28px; }
-    .yes-btn {
-      display: block; width: 100%; padding: 20px;
-      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
-      color: #fff; border: none; border-radius: var(--btn-radius);
-      font-family: inherit; font-size: 20px; font-weight: 800; letter-spacing: 1px; cursor: pointer;
-      transition: transform var(--speed-btn), box-shadow var(--speed-btn);
-    }
-    .yes-btn:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 14px 38px rgba(214,58,249,.5); }
-    .yes-btn:active { transform: translateY(0) scale(1); }
+  .augenbraue {
+    font-family: "Caveat", cursive; font-size: 1.35rem;
+    color: var(--terrakotta-d); text-align: center; margin-bottom: 6px;
+  }
+  .frage {
+    font-size: 1.5rem; line-height: 1.32; font-weight: 600;
+    text-align: center; text-wrap: balance; margin-bottom: 24px;
+  }
 
-    /* ── Celebration Overlay ─────────────────────────────────── */
-    #celebration {
-      display: none; position: fixed; inset: 0;
-      background: rgba(8,8,28,.78); backdrop-filter: blur(5px);
-      z-index: 999; align-items: center; justify-content: center; padding: 24px;
-    }
-    #celebration.show { display: flex; }
-    .celeb-card {
-      background: #fff; border-radius: 28px; padding: 44px 32px;
-      max-width: 360px; width: 100%; text-align: center;
-      animation: popIn .45s cubic-bezier(.175,.885,.32,1.275);
-    }
-    @keyframes popIn { from { opacity:0; transform:scale(.75); } to { opacity:1; transform:scale(1); } }
-    .celeb-icon  { font-size: 62px; display: block; margin-bottom: 14px; }
-    .celeb-title { font-size: 22px; font-weight: 700; color: var(--text-900); margin-bottom: 12px; }
-    .celeb-body  { font-size: 15px; color: var(--text-500); line-height: 1.65; margin-bottom: 24px; }
-    .celeb-close { font-size: 13px; color: var(--text-300); cursor: pointer; text-decoration: underline; background: none; border: none; font-family: inherit; }
-  </style>
+  /* ============================================================
+     7) ANTWORT-BUTTONS
+     ============================================================ */
+  .optionen { display: flex; flex-direction: column; gap: 12px; }
+  .option {
+    font-family: inherit; font-size: 1.05rem; font-weight: 500;
+    color: var(--tinte); text-align: left; background: #fffdf9;
+    border: 1.5px solid rgba(69,56,47,.14); border-radius: 16px;
+    padding: 16px 18px; cursor: pointer;
+    transition: transform .15s ease, border-color .2s ease, box-shadow .2s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .option:hover {
+    border-color: var(--terrakotta);
+    box-shadow: 0 8px 22px -10px rgba(216,116,79,.55);
+    transform: translateY(-2px);
+  }
+  .option:active { transform: translateY(0) scale(.99); }
+
+  /* ============================================================
+     8) FINALE
+     ============================================================ */
+  .finale { text-align: center; }
+  .finale h1 {
+    font-family: "Fraunces", serif; font-weight: 600; font-size: 1.7rem;
+    line-height: 1.3; text-wrap: balance; margin-bottom: 10px;
+  }
+  .finale .wahl { color: var(--terrakotta-d); font-style: italic; }
+  .finale .datum {
+    display: inline-block; margin: 14px 0 24px;
+    font-family: "Caveat", cursive; font-size: 1.5rem; color: var(--petrol-d);
+  }
+  .ja-button {
+    font-family: inherit; font-size: 1.3rem; font-weight: 600; color: #fff;
+    background: linear-gradient(135deg, var(--terrakotta), var(--terrakotta-d));
+    border: none; border-radius: 18px; padding: 18px 54px; cursor: pointer;
+    box-shadow: 0 14px 30px -10px rgba(185,84,58,.7);
+    transition: transform .15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .ja-button:hover { transform: translateY(-3px) scale(1.03); }
+  .ja-button:active { transform: translateY(0) scale(.98); }
+
+  .belohnung { text-align: center; }
+  .belohnung h2 { font-weight: 600; font-size: 1.6rem; margin-bottom: 12px; text-wrap: balance; }
+  .belohnung p { color: var(--tinte-soft); font-size: 1.08rem; line-height: 1.5; text-wrap: balance; }
+  .gutschein {
+    margin-top: 22px; border: 2px dashed var(--petrol); border-radius: 16px;
+    padding: 16px 18px; background: rgba(63,125,120,.10);
+    font-family: "Caveat", cursive; font-size: 1.4rem; color: var(--petrol-d);
+  }
+  .zurueck {
+    display: inline-block; margin-top: 22px; font-family: "Caveat", cursive;
+    font-size: 1.15rem; color: var(--tinte-soft); background: none; border: none;
+    cursor: pointer; opacity: .8;
+  }
+  .zurueck:hover { opacity: 1; color: var(--terrakotta-d); }
+
+  #konfetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+
+  /* ============================================================
+     STARTSEITE  –  Date-Frage mit flüchtendem NEIN-Button
+     ============================================================ */
+  /* aufgeregtes Zappeln/Wackeln der Hype-Tierchen */
+  @keyframes zappeln {
+    0%,100% { transform: translateY(0)   rotate(-3deg) scale(1); }
+    25%     { transform: translateY(-4px) rotate(3deg)  scale(1.04); }
+    50%     { transform: translateY(0)   rotate(-2deg) scale(1); }
+    75%     { transform: translateY(-3px) rotate(2deg)  scale(1.03); }
+  }
+  .szene.hype .tier { animation: zappeln .45s ease-in-out infinite; }
+
+  .start { text-align: center; }
+  .start .augenbraue { margin-bottom: 2px; }
+  .start .frage { margin-bottom: 30px; }
+
+  /* Bühne für die zwei Buttons: relativ, damit NEIN frei springen kann */
+  .start-buttons {
+    position: relative;
+    min-height: 200px;
+    margin-top: 6px;
+  }
+  /* JA bleibt schön mittig und einladend groß */
+  .btn-ja {
+    font-family: inherit; font-size: 1.35rem; font-weight: 600; color: #fff;
+    background: linear-gradient(135deg, var(--terrakotta), var(--terrakotta-d));
+    border: none; border-radius: 18px; padding: 18px 64px; cursor: pointer;
+    box-shadow: 0 14px 30px -10px rgba(185,84,58,.7);
+    transition: transform .15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-ja:hover { transform: translateY(-3px) scale(1.05); }
+  .btn-ja:active { transform: translateY(0) scale(.98); }
+
+  /* NEIN: kleiner, dezent – und springt weg, sobald man ihn anvisiert */
+  .btn-nein {
+    font-family: inherit; font-size: 1rem; font-weight: 500; color: var(--tinte-soft);
+    background: #fffdf9; border: 1.5px solid rgba(69,56,47,.16);
+    border-radius: 14px; padding: 12px 26px; cursor: pointer;
+    transition: top .25s cubic-bezier(.34,1.56,.64,1), left .25s cubic-bezier(.34,1.56,.64,1), transform .12s ease;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  /* Sobald der Button „auf der Flucht" ist, wird er absolut positioniert */
+  .btn-nein.flieht { position: absolute; }
+
+  /* freche Reaktion, falls NEIN doch erwischt wird */
+  .reaktion {
+    margin-top: 18px;
+    font-family: "Caveat", cursive;
+    font-size: 1.45rem;
+    color: var(--terrakotta-d);
+    min-height: 1.6em;
+    opacity: 0;
+    transition: opacity .4s ease;
+  }
+  .reaktion.zeigen { opacity: 1; }
+
+  /* ============================================================
+     9) GRÖSSERE BREITEN
+     ============================================================ */
+  @media (min-width: 600px) {
+    .karte  { padding: 44px 44px 38px; }
+    .frage  { font-size: 1.7rem; }
+    .finale h1 { font-size: 1.95rem; }
+    .szene  { gap: 14px; min-height: 96px; }
+    .tier   { width: 86px; }
+    .tier.vase { width: 78px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .step.sichtbar { animation: none; }
+    .option, .ja-button, .tier { transition: none; animation: none; }
+  }
+</style>
 </head>
+
 <body>
-<div class="game">
-
-  <!-- ════════════════════════════════════════════════════════
-       SCREEN 0 · INTRO
-       Bär oben-links + Hase unten-rechts
-  ════════════════════════════════════════════════════════ -->
-  <div class="screen active" id="s0">
-    <div class="card">
-
-      <!-- BÄR oben-links mit Lupe -->
-      <svg class="a" style="top:-66px;left:-18px;width:92px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
-        <!-- Ohren -->
-        <circle cx="22" cy="14" r="13" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <circle cx="22" cy="14" r="8"  fill="#a06548"/>
-        <circle cx="68" cy="14" r="13" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <circle cx="68" cy="14" r="8"  fill="#a06548"/>
-        <!-- Körper -->
-        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#e8c4a0"/>
-        <!-- linker Arm -->
-        <ellipse cx="10" cy="68" rx="9" ry="13" fill="#c4856a" stroke="#333" stroke-width="1.5" transform="rotate(-15,10,68)"/>
-        <!-- rechter Arm (hochgehoben für Lupe) -->
-        <ellipse cx="82" cy="58" rx="9" ry="13" fill="#c4856a" stroke="#333" stroke-width="1.5" transform="rotate(-35,82,58)"/>
-        <!-- Füße -->
-        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <!-- Kopf -->
-        <circle cx="46" cy="38" r="27" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="44" rx="14" ry="10" fill="#e8c4a0" stroke="#333" stroke-width="1"/>
-        <!-- Augen -->
-        <circle cx="35" cy="33" r="5.5" fill="#222"/>
-        <circle cx="57" cy="33" r="5.5" fill="#222"/>
-        <circle cx="37" cy="31" r="2"   fill="white"/>
-        <circle cx="59" cy="31" r="2"   fill="white"/>
-        <ellipse cx="46" cy="42" rx="3" ry="2" fill="#222"/>
-        <circle cx="26" cy="41" r="6" fill="#ffb3ba" opacity=".55"/>
-        <circle cx="66" cy="41" r="6" fill="#ffb3ba" opacity=".55"/>
-        <path d="M41,48 Q46,53 51,48" fill="none" stroke="#222" stroke-width="1.8" stroke-linecap="round"/>
-        <!-- Lupe -->
-        <circle cx="84" cy="42" r="12" fill="none" stroke="#8B6914" stroke-width="3"/>
-        <circle cx="84" cy="42" r="8"  fill="rgba(190,220,255,.35)"/>
-        <line  x1="93" y1="51" x2="100" y2="60" stroke="#8B6914" stroke-width="3.5" stroke-linecap="round"/>
-      </svg>
-
-      <!-- HASE unten-rechts mit Umschlag -->
-      <svg class="a" style="bottom:-62px;right:-18px;width:88px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
-        <!-- Ohren -->
-        <ellipse cx="30" cy="6"  rx="11" ry="24" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="62" cy="6"  rx="11" ry="24" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="30" cy="6"  rx="6.5" ry="17" fill="#ffc8d0"/>
-        <ellipse cx="62" cy="6"  rx="6.5" ry="17" fill="#ffc8d0"/>
-        <!-- Körper -->
-        <ellipse cx="46" cy="76" rx="32" ry="25" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="80" rx="20" ry="16" fill="#ede5de"/>
-        <!-- linker Arm (hält Umschlag) -->
-        <ellipse cx="10" cy="62" rx="9" ry="13" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(-20,10,62)"/>
-        <!-- rechter Arm -->
-        <ellipse cx="82" cy="68" rx="9" ry="13" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(12,82,68)"/>
-        <!-- Füße -->
-        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <!-- Kopf -->
-        <circle cx="46" cy="42" r="27" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="48" rx="13" ry="9" fill="#ede5de" stroke="#333" stroke-width="1"/>
-        <!-- Augen -->
-        <circle cx="35" cy="37" r="5.5" fill="#222"/>
-        <circle cx="57" cy="37" r="5.5" fill="#222"/>
-        <circle cx="37" cy="35" r="2"   fill="white"/>
-        <circle cx="59" cy="35" r="2"   fill="white"/>
-        <ellipse cx="46" cy="46" rx="3" ry="2" fill="#ffb3ba"/>
-        <circle cx="26" cy="44" r="6" fill="#ffb3ba" opacity=".5"/>
-        <circle cx="66" cy="44" r="6" fill="#ffb3ba" opacity=".5"/>
-        <path d="M41,52 Q46,57 51,52" fill="none" stroke="#222" stroke-width="1.8" stroke-linecap="round"/>
-        <!-- Umschlag -->
-        <rect x="-6" y="56" width="26" height="18" rx="3" fill="#fff9e0" stroke="#e0c870" stroke-width="1.5"/>
-        <path d="M-6,56 L7,66 L20,56" fill="none" stroke="#e0c870" stroke-width="1.5"/>
-        <path d="M0,63 C0,61 3,59 3,62 C3,59 6,61 6,63 C6,65 3,67 3,67 C3,67 0,65 0,63Z" fill="#ff8fab"/>
-      </svg>
-
-      <div class="card-body">
-        <h1 class="intro-title">Geheime Date-Mission</h1>
-        <!-- FIX 1: "Art …" → "Art" – Punkte entfernt -->
-        <p class="intro-sub">
-          Bevor ich dir verrate, was ich plane, brauchst du erst eine Art Eignungstest.
-          Keine Angst – er ist lösbar. Meistens.
-        </p>
-        <button class="cta-btn" onclick="goTo('s1')">Test starten →</button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- ════════════════════════════════════════════════════════
-       SCREEN 1 · FRAGE 1 – Herausforderung
-       Katze oben-rechts (entschlossen) + Hund unten-links (nervös)
-  ════════════════════════════════════════════════════════ -->
-  <div class="screen" id="s1">
-    <div class="card">
-
-      <!-- KATZE oben-rechts, flexend -->
-      <svg class="a" style="top:-66px;right:-18px;width:92px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
-        <!-- Spitze Ohren -->
-        <polygon points="20,22 10,2 34,14"  fill="#b8c0cc" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
-        <polygon points="72,22 82,2 58,14"  fill="#b8c0cc" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
-        <polygon points="22,20 14,6 32,14"  fill="#ffc8d0"/>
-        <polygon points="70,20 78,6 60,14"  fill="#ffc8d0"/>
-        <!-- Körper -->
-        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#d4dce8"/>
-        <!-- linker Arm (herunter) -->
-        <ellipse cx="10" cy="70" rx="9" ry="13" fill="#b8c0cc" stroke="#333" stroke-width="1.5" transform="rotate(-10,10,70)"/>
-        <!-- rechter Arm (hoch – Bizeps) -->
-        <ellipse cx="84" cy="56" rx="9" ry="13" fill="#b8c0cc" stroke="#333" stroke-width="1.5" transform="rotate(-40,84,56)"/>
-        <circle  cx="82" cy="46" r="10" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
-        <!-- Füße -->
-        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
-        <!-- Kopf -->
-        <circle cx="46" cy="40" r="27" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="47" rx="14" ry="10" fill="#d4dce8" stroke="#333" stroke-width="1"/>
-        <!-- Entschlossene Augen (leicht zugekniffen) -->
-        <ellipse cx="34" cy="36" rx="6"   ry="5"   fill="#222"/>
-        <ellipse cx="58" cy="36" rx="6"   ry="4.5" fill="#222"/>
-        <circle  cx="36" cy="34" r="2"   fill="white"/>
-        <circle  cx="60" cy="34" r="2"   fill="white"/>
-        <!-- Entschlossene Augenbrauen -->
-        <path d="M27,28 Q34,24 41,28" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round"/>
-        <path d="M51,28 Q58,24 65,28" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round"/>
-        <!-- Nase + Schnurrhaare -->
-        <circle cx="46" cy="45" r="2.5" fill="#8090a0"/>
-        <line x1="8"  y1="44" x2="30" y2="47" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-        <line x1="8"  y1="48" x2="30" y2="49" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-        <line x1="62" y1="47" x2="84" y2="44" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-        <line x1="62" y1="49" x2="84" y2="48" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-        <circle cx="26" cy="44" r="6" fill="#ffb3ba" opacity=".35"/>
-        <circle cx="66" cy="44" r="6" fill="#ffb3ba" opacity=".35"/>
-        <path d="M40,52 Q46,58 52,52" fill="none" stroke="#222" stroke-width="1.8" stroke-linecap="round"/>
-      </svg>
-
-      <!-- HUND unten-links, nervös mit Schweißtropfen -->
-      <svg class="a" style="bottom:-62px;left:-18px;width:90px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
-        <!-- Hängeohren -->
-        <ellipse cx="14" cy="50" rx="12" ry="26" fill="#d4a56a" stroke="#333" stroke-width="1.5" transform="rotate(-8,14,50)"/>
-        <ellipse cx="78" cy="50" rx="12" ry="26" fill="#d4a56a" stroke="#333" stroke-width="1.5" transform="rotate(8,78,50)"/>
-        <!-- Körper -->
-        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#d4a56a" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#e8c488"/>
-        <!-- Arme -->
-        <ellipse cx="10" cy="68" rx="9" ry="13" fill="#d4a56a" stroke="#333" stroke-width="1.5" transform="rotate(-12,10,68)"/>
-        <ellipse cx="82" cy="68" rx="9" ry="13" fill="#d4a56a" stroke="#333" stroke-width="1.5" transform="rotate(12,82,68)"/>
-        <!-- Füße -->
-        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#d4a56a" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#d4a56a" stroke="#333" stroke-width="1.5"/>
-        <!-- Kopf -->
-        <circle cx="46" cy="40" r="27" fill="#d4a56a" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="48" rx="15" ry="11" fill="#e8c488" stroke="#333" stroke-width="1"/>
-        <!-- Besorgte Augen -->
-        <circle cx="34" cy="36" r="6"  fill="#222"/>
-        <circle cx="58" cy="36" r="6"  fill="#222"/>
-        <circle cx="36" cy="34" r="2"  fill="white"/>
-        <circle cx="60" cy="34" r="2"  fill="white"/>
-        <!-- Hochgezogene Augenbrauen -->
-        <path d="M27,27 Q34,23 41,27" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round"/>
-        <path d="M51,27 Q58,23 65,27" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round"/>
-        <ellipse cx="46" cy="46" rx="5" ry="3.5" fill="#222"/>
-        <circle cx="44" cy="44" r="1.5" fill="rgba(255,255,255,.4)"/>
-        <circle cx="24" cy="45" r="7" fill="#ffb3ba" opacity=".5"/>
-        <circle cx="68" cy="45" r="7" fill="#ffb3ba" opacity=".5"/>
-        <!-- Zitternder Mund -->
-        <path d="M38,55 Q42,52 46,55 Q50,58 54,55" fill="none" stroke="#222" stroke-width="1.8" stroke-linecap="round"/>
-        <!-- Schweißtropfen -->
-        <path d="M72,25 Q74,17 76,25 Q76,30 74,30 Q72,30 72,25Z" fill="#a8d8f0"/>
-        <path d="M80,34 Q81,29 83,34 Q83,37 81.5,37 Q80,37 80,34Z" fill="#a8d8f0"/>
-      </svg>
-
-      <div class="card-body">
-        <div class="progress">
-          <div class="progress-step filled"></div>
-          <div class="progress-step"></div>
-          <div class="progress-step"></div>
-          <div class="progress-step"></div>
-        </div>
-        <p class="q-label">Frage 1 von 4</p>
-        <p class="q-text">
-          Bist du heute bereit, dich einer Herausforderung zu stellen,
-          die deine Geduld (und meine künstlerischen Fähigkeiten)
-          massiv auf die Probe stellt?
-        </p>
-        <div class="options">
-          <button class="opt" onclick="goTo('s2')">💪 Ich liebe Herausforderungen</button>
-          <button class="opt" onclick="goTo('s2')">🤔 Hängt davon ab, wie sehr wir uns blamieren</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- ════════════════════════════════════════════════════════
-       SCREEN 2 · FRAGE 2 – Umgebung / Vibe
-       Maus oben-links (ordentlich) + Küken unten-rechts (Chaos)
-       FIX 3: "Dreck" → "Farbe"
-  ════════════════════════════════════════════════════════ -->
-  <div class="screen" id="s2">
-    <div class="card">
-
-      <!-- MAUS oben-links, konzentriert mit Pinsel -->
-      <svg class="a" style="top:-66px;left:-18px;width:90px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
-        <!-- Runde Ohren -->
-        <circle cx="22" cy="16" r="15" fill="#c8c8c8" stroke="#333" stroke-width="1.5"/>
-        <circle cx="70" cy="16" r="15" fill="#c8c8c8" stroke="#333" stroke-width="1.5"/>
-        <circle cx="22" cy="16" r="9"  fill="#f0b0b8" opacity=".55"/>
-        <circle cx="70" cy="16" r="9"  fill="#f0b0b8" opacity=".55"/>
-        <!-- Schürze -->
-        <path d="M26,74 Q46,85 66,74 L62,98 Q46,103 30,98Z" fill="white" stroke="#e0e0e0" stroke-width="1"/>
-        <!-- Körper -->
-        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#c8c8c8" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#d8d8d8"/>
-        <!-- Arme -->
-        <ellipse cx="10" cy="68" rx="9" ry="13" fill="#c8c8c8" stroke="#333" stroke-width="1.5" transform="rotate(-12,10,68)"/>
-        <!-- rechter Arm (hält winzigen Pinsel) -->
-        <ellipse cx="82" cy="60" rx="9" ry="13" fill="#c8c8c8" stroke="#333" stroke-width="1.5" transform="rotate(-30,82,60)"/>
-        <!-- Füße -->
-        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#c8c8c8" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#c8c8c8" stroke="#333" stroke-width="1.5"/>
-        <!-- Schwanz -->
-        <path d="M80,90 Q100,82 100,70 Q100,56 88,52" fill="none" stroke="#c8c8c8" stroke-width="5" stroke-linecap="round"/>
-        <path d="M80,90 Q100,82 100,70 Q100,56 88,52" fill="none" stroke="#333" stroke-width="1.5" stroke-linecap="round"/>
-        <!-- Kopf -->
-        <circle cx="46" cy="40" r="27" fill="#c8c8c8" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="47" rx="14" ry="10" fill="#d8d8d8" stroke="#333" stroke-width="1"/>
-        <!-- Konzentrierte Augen (ein Auge zugekniffen) -->
-        <ellipse cx="34" cy="36" rx="6"   ry="5"   fill="#222"/>
-        <ellipse cx="58" cy="36" rx="5.5" ry="4.5" fill="#222"/>
-        <circle  cx="36" cy="34" r="2"   fill="white"/>
-        <circle  cx="60" cy="34" r="2"   fill="white"/>
-        <path d="M27,28 Q34,24 41,28" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round"/>
-        <ellipse cx="46" cy="45" rx="3" ry="2" fill="#a0a0a0"/>
-        <circle cx="26" cy="44" r="6" fill="#ffb3ba" opacity=".4"/>
-        <circle cx="66" cy="44" r="6" fill="#ffb3ba" opacity=".4"/>
-        <path d="M41,51 Q46,56 51,51" fill="none" stroke="#222" stroke-width="1.8" stroke-linecap="round"/>
-        <!-- Kleiner Pinsel -->
-        <rect x="88" y="43" width="4" height="20" rx="2" fill="#6b4c14"/>
-        <ellipse cx="90" cy="41" rx="3" ry="7" fill="#e0e0e0"/>
-        <ellipse cx="90" cy="37" rx="2.5" ry="2" fill="#9b59b6"/>
-      </svg>
-
-      <!-- KÜKEN unten-rechts, bekleckert -->
-      <svg class="a" style="bottom:-62px;right:-18px;width:90px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
-        <!-- Körper -->
-        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#f5d030" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#fff3cd"/>
-        <!-- Farbkleckse auf Körper -->
-        <circle cx="36" cy="76" r="6"   fill="#e74c3c" opacity=".65"/>
-        <circle cx="56" cy="83" r="5"   fill="#3498db" opacity=".65"/>
-        <circle cx="46" cy="70" r="4.5" fill="#9b59b6" opacity=".65"/>
-        <!-- Flügel-Arme -->
-        <ellipse cx="10" cy="70" rx="10" ry="14" fill="#f5d030" stroke="#333" stroke-width="1.5" transform="rotate(-18,10,70)"/>
-        <ellipse cx="82" cy="70" rx="10" ry="14" fill="#f5d030" stroke="#333" stroke-width="1.5" transform="rotate(18,82,70)"/>
-        <!-- Füße -->
-        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#f5d030" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#f5d030" stroke="#333" stroke-width="1.5"/>
-        <!-- Kopf -->
-        <circle cx="46" cy="40" r="28" fill="#f5d030" stroke="#333" stroke-width="1.5"/>
-        <!-- Farbkleckse im Gesicht -->
-        <circle cx="22" cy="32" r="7"   fill="#e74c3c" opacity=".55"/>
-        <circle cx="68" cy="36" r="5.5" fill="#3498db" opacity=".55"/>
-        <!-- Aufgerissene Augen (Spaß) -->
-        <circle cx="34" cy="36" r="7"   fill="#222"/>
-        <circle cx="58" cy="36" r="7"   fill="#222"/>
-        <circle cx="36" cy="33" r="2.5" fill="white"/>
-        <circle cx="60" cy="33" r="2.5" fill="white"/>
-        <!-- Schnabel -->
-        <path d="M39,46 L46,53 L53,46Z" fill="#e07030" stroke="#333" stroke-width="1"/>
-        <circle cx="24" cy="45" r="7" fill="#ffb3ba" opacity=".5"/>
-        <circle cx="68" cy="45" r="7" fill="#ffb3ba" opacity=".5"/>
-        <!-- Lachendes Maul -->
-        <path d="M35,56 Q46,66 57,56" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round"/>
-        <!-- Fliegende Farbtropfen -->
-        <circle cx="-8"  cy="50" r="5"  fill="#e74c3c" opacity=".7"/>
-        <circle cx="-16" cy="66" r="4"  fill="#3498db" opacity=".7"/>
-        <circle cx="-4"  cy="72" r="3"  fill="#f39c12" opacity=".7"/>
-      </svg>
-
-      <div class="card-body">
-        <div class="progress">
-          <div class="progress-step filled"></div>
-          <div class="progress-step filled"></div>
-          <div class="progress-step"></div>
-          <div class="progress-step"></div>
-        </div>
-        <p class="q-label">Frage 2 von 4</p>
-        <!-- FIX 3: "Dreck" → "Farbe" -->
-        <p class="q-text">
-          Wir brauchen eine Umgebung, in der es okay ist, wenn wir
-          uns mit Farbe beschmutzen. Welcher Vibe passt zu uns?
-        </p>
-        <div class="options">
-          <button class="opt" onclick="goTo('s3')">🧘 Stille, konzentrierte Umgebung</button>
-          <button class="opt" onclick="goTo('s3')">🎉 Lautes, kreatives Chaos</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- ════════════════════════════════════════════════════════
-       SCREEN 3 · FRAGE 3 – Feinmotorik
-       Fuchs oben-rechts (präziser Pinsel) + Schwein unten-links (Chaos)
-  ════════════════════════════════════════════════════════ -->
-  <div class="screen" id="s3">
-    <div class="card">
-
-      <!-- FUCHS oben-rechts, winziger Pinsel -->
-      <svg class="a" style="top:-66px;right:-18px;width:92px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
-        <!-- Spitze Ohren -->
-        <polygon points="18,24 8,2 34,16"  fill="#e07845" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
-        <polygon points="74,24 84,2 58,16" fill="#e07845" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
-        <polygon points="20,22 12,6 32,16" fill="#c0401a"/>
-        <polygon points="72,22 80,6 60,16" fill="#c0401a"/>
-        <!-- Schwanz (hinter Körper) -->
-        <path d="M72,82 Q96,70 98,86 Q96,98 80,96" fill="#e07845" stroke="#333" stroke-width="1.5"/>
-        <path d="M74,85 Q92,75 94,87 Q92,96 80,94" fill="white" opacity=".6"/>
-        <!-- Körper -->
-        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#e07845" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="80" rx="22" ry="18" fill="#f8f0e8"/>
-        <!-- Arme -->
-        <ellipse cx="10" cy="68" rx="9" ry="13" fill="#e07845" stroke="#333" stroke-width="1.5" transform="rotate(-12,10,68)"/>
-        <!-- rechter Arm (hält winzigen Pinsel, konzentriert) -->
-        <ellipse cx="82" cy="60" rx="9" ry="13" fill="#e07845" stroke="#333" stroke-width="1.5" transform="rotate(-32,82,60)"/>
-        <!-- Füße -->
-        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#e07845" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#e07845" stroke="#333" stroke-width="1.5"/>
-        <!-- Kopf -->
-        <circle cx="46" cy="40" r="27" fill="#e07845" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="48" rx="16" ry="12" fill="#f8f0e8" stroke="#333" stroke-width="1"/>
-        <!-- Konzentrierte Augen -->
-        <ellipse cx="34" cy="36" rx="6"   ry="5.5" fill="#222"/>
-        <ellipse cx="58" cy="36" rx="5.5" ry="4.5" fill="#222"/>
-        <circle  cx="36" cy="34" r="2"   fill="white"/>
-        <circle  cx="60" cy="34" r="2"   fill="white"/>
-        <path d="M26,27 Q34,23 42,27" fill="none" stroke="#222" stroke-width="2.2" stroke-linecap="round"/>
-        <ellipse cx="46" cy="46" rx="4" ry="2.5" fill="#222"/>
-        <circle cx="24" cy="45" r="6.5" fill="#ffb3ba" opacity=".45"/>
-        <circle cx="68" cy="45" r="6.5" fill="#ffb3ba" opacity=".45"/>
-        <!-- Zunge (Konzentration) -->
-        <path d="M40,53 Q46,59 52,53" fill="#ffb3ba"/>
-        <!-- Pinsel -->
-        <rect x="88" y="38" width="4" height="22" rx="2" fill="#5c3a10"/>
-        <ellipse cx="90" cy="36" rx="3" ry="7" fill="#d8d8d8"/>
-        <ellipse cx="90" cy="31" rx="2.5" ry="2" fill="#9b59b6"/>
-      </svg>
-
-      <!-- SCHWEIN unten-links, überrascht mit Farb-Chaos -->
-      <svg class="a" style="bottom:-62px;left:-18px;width:90px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
-        <!-- Runde Ohren -->
-        <circle cx="22" cy="16" r="14" fill="#ffb7c5" stroke="#333" stroke-width="1.5"/>
-        <circle cx="70" cy="16" r="14" fill="#ffb7c5" stroke="#333" stroke-width="1.5"/>
-        <circle cx="22" cy="16" r="8.5" fill="#ff8fab" opacity=".55"/>
-        <circle cx="70" cy="16" r="8.5" fill="#ff8fab" opacity=".55"/>
-        <!-- Körper -->
-        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#ffb7c5" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#ffd4de"/>
-        <!-- Farbtupfer auf Körper -->
-        <circle cx="36" cy="76" r="5.5" fill="#3498db" opacity=".55"/>
-        <circle cx="58" cy="82" r="5"   fill="#27ae60" opacity=".55"/>
-        <!-- Arme -->
-        <ellipse cx="10" cy="68" rx="9" ry="13" fill="#ffb7c5" stroke="#333" stroke-width="1.5" transform="rotate(-12,10,68)"/>
-        <!-- rechter Arm hält Pinsel (wild) -->
-        <ellipse cx="82" cy="60" rx="9" ry="13" fill="#ffb7c5" stroke="#333" stroke-width="1.5" transform="rotate(-28,82,60)"/>
-        <!-- Füße -->
-        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#ffb7c5" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#ffb7c5" stroke="#333" stroke-width="1.5"/>
-        <!-- Kopf -->
-        <circle cx="46" cy="40" r="27" fill="#ffb7c5" stroke="#333" stroke-width="1.5"/>
-        <!-- Farb-Kleckse im Gesicht -->
-        <circle cx="20" cy="30" r="7"   fill="#3498db" opacity=".5"/>
-        <circle cx="70" cy="26" r="5"   fill="#f39c12" opacity=".5"/>
-        <!-- Schnauze -->
-        <ellipse cx="46" cy="48" rx="16" ry="12" fill="#ff8fab" opacity=".65" stroke="#333" stroke-width="1"/>
-        <circle cx="39" cy="48" r="4" fill="#d06070" opacity=".45"/>
-        <circle cx="53" cy="48" r="4" fill="#d06070" opacity=".45"/>
-        <!-- Überraschte Augen (groß & rund) -->
-        <circle cx="33" cy="36" r="8"   fill="white" stroke="#222" stroke-width="1.2"/>
-        <circle cx="59" cy="36" r="8"   fill="white" stroke="#222" stroke-width="1.2"/>
-        <circle cx="35" cy="38" r="5.5" fill="#222"/>
-        <circle cx="61" cy="38" r="5.5" fill="#222"/>
-        <circle cx="36" cy="36" r="2"   fill="white"/>
-        <circle cx="62" cy="36" r="2"   fill="white"/>
-        <!-- Überraschter O-Mund -->
-        <circle cx="46" cy="57" r="5.5" fill="#222"/>
-        <!-- Wilder Pinsel + Farbtropfen -->
-        <rect x="84" y="38" width="6" height="24" rx="3" fill="#6b4c14" transform="rotate(-15,87,50)"/>
-        <ellipse cx="88" cy="36" rx="7" ry="10" fill="#c0c0c0" transform="rotate(-15,88,36)"/>
-        <circle cx="96" cy="22" r="5"  fill="#e74c3c" opacity=".7"/>
-        <circle cx="104" cy="34" r="4" fill="#9b59b6" opacity=".7"/>
-      </svg>
-
-      <div class="card-body">
-        <div class="progress">
-          <div class="progress-step filled"></div>
-          <div class="progress-step filled"></div>
-          <div class="progress-step filled"></div>
-          <div class="progress-step"></div>
-        </div>
-        <p class="q-label">Frage 3 von 4</p>
-        <p class="q-text">Wie gut ist deine Feinmotorik ohne Smartphone?</p>
-        <div class="options">
-          <button class="opt" onclick="goTo('s4')">🎯 Ich treffe jedes Nadelöhr</button>
-          <button class="opt" onclick="goTo('s4')">🙈 Ich bin froh, wenn ich nichts um mich herum bekleckere</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- ════════════════════════════════════════════════════════
-       SCREEN 4 · FRAGE 4 – Kino vs. Essen
-       Hase oben-links (Popcorn) + Bär unten-rechts (Hunger)
-  ════════════════════════════════════════════════════════ -->
-  <div class="screen" id="s4">
-    <div class="card">
-
-      <!-- HASE oben-links, Popcorn & schläfrig -->
-      <svg class="a" style="top:-66px;left:-18px;width:90px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
-        <!-- Ohren (leicht hängend – müde) -->
-        <ellipse cx="30" cy="6"  rx="11" ry="24" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(-6,30,6)"/>
-        <ellipse cx="64" cy="4"  rx="11" ry="24" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(4,64,4)"/>
-        <ellipse cx="30" cy="6"  rx="6.5" ry="17" fill="#ffc8d0"/>
-        <ellipse cx="64" cy="4"  rx="6.5" ry="17" fill="#ffc8d0"/>
-        <!-- Körper -->
-        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#ede5de"/>
-        <!-- Arme -->
-        <ellipse cx="10" cy="68" rx="9" ry="13" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(-12,10,68)"/>
-        <!-- rechter Arm (hält Popcorn) -->
-        <ellipse cx="82" cy="62" rx="9" ry="13" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(-26,82,62)"/>
-        <!-- Füße -->
-        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <!-- Kopf -->
-        <circle cx="46" cy="42" r="27" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="49" rx="13" ry="9" fill="#ede5de" stroke="#333" stroke-width="1"/>
-        <!-- Halbgeschlossene Augen (müde) -->
-        <circle cx="34" cy="38" r="6.5" fill="#222"/>
-        <rect   x="27" y="31" width="14" height="8" rx="3" fill="#f5f0ec"/>
-        <circle cx="36" cy="37" r="2.2" fill="white"/>
-        <circle cx="58" cy="38" r="6.5" fill="#222"/>
-        <rect   x="51" y="31" width="14" height="8" rx="3" fill="#f5f0ec"/>
-        <circle cx="60" cy="37" r="2.2" fill="white"/>
-        <ellipse cx="46" cy="47" rx="3" ry="2" fill="#ffb3ba"/>
-        <circle cx="26" cy="46" r="7" fill="#ffb3ba" opacity=".5"/>
-        <circle cx="66" cy="46" r="7" fill="#ffb3ba" opacity=".5"/>
-        <path d="M40,54 Q46,59 52,54" fill="none" stroke="#222" stroke-width="1.8" stroke-linecap="round"/>
-        <!-- ZZZ -->
-        <text x="68" y="30" font-size="11" fill="#a0aec0" opacity=".7">z</text>
-        <text x="77" y="20" font-size="15" fill="#a0aec0" opacity=".7">z</text>
-        <!-- Popcorn-Box -->
-        <path d="M86,44 L90,72 L106,72 L110,44Z" fill="#e63946" stroke="#333" stroke-width="1.2"/>
-        <line x1="91" y1="44" x2="88" y2="72" stroke="white" stroke-width="1.8" opacity=".55"/>
-        <line x1="98" y1="44" x2="98" y2="72" stroke="white" stroke-width="1.8" opacity=".55"/>
-        <line x1="105" y1="44" x2="108" y2="72" stroke="white" stroke-width="1.8" opacity=".55"/>
-        <circle cx="90" cy="40" r="6"   fill="#fff3cd"/>
-        <circle cx="98" cy="36" r="7"   fill="#fff3cd"/>
-        <circle cx="106" cy="40" r="6"  fill="#fff3cd"/>
-        <circle cx="94" cy="33" r="5"   fill="#fff3cd"/>
-        <circle cx="102" cy="33" r="5"  fill="#fff3cd"/>
-      </svg>
-
-      <!-- BÄR unten-rechts, hungrig mit Besteck -->
-      <svg class="a" style="bottom:-62px;right:-18px;width:92px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
-        <!-- Ohren -->
-        <circle cx="22" cy="14" r="13" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <circle cx="22" cy="14" r="8"  fill="#a06548"/>
-        <circle cx="70" cy="14" r="13" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <circle cx="70" cy="14" r="8"  fill="#a06548"/>
-        <!-- Körper -->
-        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#e8c4a0"/>
-        <!-- Arme (beide hoch mit Besteck) -->
-        <ellipse cx="10" cy="58" rx="9" ry="13" fill="#c4856a" stroke="#333" stroke-width="1.5" transform="rotate(-35,10,58)"/>
-        <ellipse cx="82" cy="58" rx="9" ry="13" fill="#c4856a" stroke="#333" stroke-width="1.5" transform="rotate(35,82,58)"/>
-        <!-- Füße -->
-        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <!-- Kopf -->
-        <circle cx="46" cy="38" r="27" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="44" rx="14" ry="10" fill="#e8c4a0" stroke="#333" stroke-width="1"/>
-        <!-- Große hungrige Augen -->
-        <circle cx="34" cy="33" r="7"   fill="#222"/>
-        <circle cx="58" cy="33" r="7"   fill="#222"/>
-        <circle cx="36" cy="30" r="2.8" fill="white"/>
-        <circle cx="60" cy="30" r="2.8" fill="white"/>
-        <circle cx="40" cy="37" r="1.5" fill="white" opacity=".6"/>
-        <circle cx="64" cy="37" r="1.5" fill="white" opacity=".6"/>
-        <ellipse cx="46" cy="42" rx="3.5" ry="2.5" fill="#222"/>
-        <circle cx="24" cy="42" r="8" fill="#ffb3ba" opacity=".55"/>
-        <circle cx="68" cy="42" r="8" fill="#ffb3ba" opacity=".55"/>
-        <!-- Großer hungriger Mund + Sabber -->
-        <path d="M32,50 Q46,62 60,50" fill="#cc4444"/>
-        <path d="M32,50 Q46,62 60,50" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round"/>
-        <path d="M44,62 Q44,68 46,69 Q48,68 48,62" fill="#a8d8f0" opacity=".7"/>
-        <!-- Messer links -->
-        <rect x="-4" y="38" width="4" height="24" rx="2" fill="#d0d0d0" stroke="#888" stroke-width="1"/>
-        <rect x="-4" y="38" width="4" height="8"  rx="1" fill="#888"/>
-        <!-- Gabel rechts -->
-        <line x1="96" y1="37" x2="96" y2="60" stroke="#d0d0d0" stroke-width="3" stroke-linecap="round"/>
-        <line x1="92" y1="37" x2="92" y2="48" stroke="#d0d0d0" stroke-width="2" stroke-linecap="round"/>
-        <line x1="100" y1="37" x2="100" y2="48" stroke="#d0d0d0" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-
-      <div class="card-body">
-        <div class="progress">
-          <div class="progress-step filled"></div>
-          <div class="progress-step filled"></div>
-          <div class="progress-step filled"></div>
-          <div class="progress-step filled"></div>
-        </div>
-        <p class="q-label">Frage 4 von 4</p>
-        <p class="q-text">
-          Wenn der kreative Teil überstanden ist:
-          Was hilft am besten gegen die Erschöpfung?
-        </p>
-        <div class="options">
-          <button class="opt" onclick="setChoice('Kino-Popcorn-Koma 🍿'); goTo('s6')">🎬 Kino-Popcorn-Koma</button>
-          <button class="opt" onclick="goTo('s5')">🍽️ Essen!</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- ════════════════════════════════════════════════════════
-       SCREEN 5 · ESSEN UNTERMENÜ
-       Frosch oben-links (Sushi) + Katze unten-rechts (Pizza)
-  ════════════════════════════════════════════════════════ -->
-  <div class="screen" id="s5">
-    <div class="card">
-
-      <!-- FROSCH oben-links, Sushi-Stäbchen -->
-      <svg class="a" style="top:-66px;left:-18px;width:92px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
-        <!-- Augen oben (Frosch-typisch) -->
-        <circle cx="28" cy="16" r="14" fill="#6db85c" stroke="#333" stroke-width="1.5"/>
-        <circle cx="64" cy="16" r="14" fill="#6db85c" stroke="#333" stroke-width="1.5"/>
-        <circle cx="28" cy="16" r="9"  fill="white"/>
-        <circle cx="64" cy="16" r="9"  fill="white"/>
-        <circle cx="30" cy="18" r="6.5" fill="#222"/>
-        <circle cx="66" cy="18" r="6.5" fill="#222"/>
-        <circle cx="32" cy="16" r="2.5" fill="white"/>
-        <circle cx="68" cy="16" r="2.5" fill="white"/>
-        <!-- Körper (leicht breiter – Frosch) -->
-        <ellipse cx="46" cy="76" rx="36" ry="25" fill="#6db85c" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="80" rx="23" ry="16" fill="#a8d878"/>
-        <!-- Arme -->
-        <ellipse cx="8"  cy="68" rx="10" ry="13" fill="#6db85c" stroke="#333" stroke-width="1.5" transform="rotate(-15,8,68)"/>
-        <!-- rechter Arm (hält Stäbchen) -->
-        <ellipse cx="84" cy="60" rx="10" ry="13" fill="#6db85c" stroke="#333" stroke-width="1.5" transform="rotate(-28,84,60)"/>
-        <!-- Füße (Frosch: etwas größer) -->
-        <ellipse cx="28" cy="97" rx="16" ry="8" fill="#6db85c" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="64" cy="97" rx="16" ry="8" fill="#6db85c" stroke="#333" stroke-width="1.5"/>
-        <!-- Kopf -->
-        <ellipse cx="46" cy="46" rx="30" ry="26" fill="#6db85c" stroke="#333" stroke-width="1.5"/>
-        <!-- Breites Frosch-Lächeln -->
-        <path d="M20,60 Q46,76 72,60" fill="#3a9030" stroke="#333" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="22" cy="56" r="7" fill="#ffb3ba" opacity=".4"/>
-        <circle cx="70" cy="56" r="7" fill="#ffb3ba" opacity=".4"/>
-        <!-- Stäbchen + Sushi -->
-        <line x1="88" y1="37" x2="104" y2="56" stroke="#6b4c14" stroke-width="2.5" stroke-linecap="round"/>
-        <line x1="93" y1="32" x2="108" y2="53" stroke="#6b4c14" stroke-width="2.5" stroke-linecap="round"/>
-        <rect  x="94" y="22" width="22" height="12" rx="4" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
-        <rect  x="94" y="22" width="22" height="3"  rx="1.5" fill="#2d2d2d"/>
-        <rect  x="94" y="31" width="22" height="3"  rx="1.5" fill="#2d2d2d"/>
-        <ellipse cx="105" cy="28" rx="8.5" ry="3.5" fill="#ff8c69"/>
-      </svg>
-
-      <!-- KATZE unten-rechts, Pizza -->
-      <svg class="a" style="bottom:-62px;right:-18px;width:90px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
-        <!-- Spitze Ohren -->
-        <polygon points="20,22 10,2 34,14"  fill="#b8c0cc" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
-        <polygon points="72,22 82,2 58,14"  fill="#b8c0cc" stroke="#333" stroke-width="1.5" stroke-linejoin="round"/>
-        <polygon points="22,20 14,6 32,14"  fill="#ffc8d0"/>
-        <polygon points="70,20 78,6 60,14"  fill="#ffc8d0"/>
-        <!-- Körper -->
-        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#d4dce8"/>
-        <!-- Arme -->
-        <!-- linker Arm (hält Pizza) -->
-        <ellipse cx="10" cy="62" rx="9" ry="13" fill="#b8c0cc" stroke="#333" stroke-width="1.5" transform="rotate(-22,10,62)"/>
-        <ellipse cx="82" cy="68" rx="9" ry="13" fill="#b8c0cc" stroke="#333" stroke-width="1.5" transform="rotate(12,82,68)"/>
-        <!-- Füße -->
-        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
-        <!-- Kopf -->
-        <circle cx="46" cy="40" r="27" fill="#b8c0cc" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="47" rx="14" ry="10" fill="#d4dce8" stroke="#333" stroke-width="1"/>
-        <!-- Glückliche Augen -->
-        <circle cx="34" cy="36" r="6"  fill="#222"/>
-        <circle cx="58" cy="36" r="6"  fill="#222"/>
-        <circle cx="36" cy="34" r="2"  fill="white"/>
-        <circle cx="60" cy="34" r="2"  fill="white"/>
-        <circle cx="46" cy="45" r="2.5" fill="#8090a0"/>
-        <line x1="6"  y1="43" x2="30" y2="47" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-        <line x1="6"  y1="47" x2="30" y2="49" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-        <line x1="62" y1="47" x2="86" y2="43" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-        <line x1="62" y1="49" x2="86" y2="47" stroke="#8090a0" stroke-width="1.2" opacity=".6"/>
-        <circle cx="24" cy="44" r="6.5" fill="#ffb3ba" opacity=".4"/>
-        <circle cx="68" cy="44" r="6.5" fill="#ffb3ba" opacity=".4"/>
-        <path d="M40,53 Q46,59 52,53" fill="none" stroke="#222" stroke-width="1.8" stroke-linecap="round"/>
-        <!-- Pizza-Stück -->
-        <path d="M-4,50 L-22,84 L14,84Z" fill="#f9a825" stroke="#333" stroke-width="1.2" stroke-linejoin="round"/>
-        <path d="M-4,50 L-22,84 L14,84" fill="none" stroke="#e65100" stroke-width="6" stroke-linejoin="round"/>
-        <circle cx="-8"  cy="68" r="4.5" fill="#e53935" opacity=".85"/>
-        <circle cx="2"   cy="74" r="4"   fill="#e53935" opacity=".85"/>
-        <circle cx="-14" cy="74" r="3.5" fill="#e53935" opacity=".85"/>
-      </svg>
-
-      <div class="card-body">
-        <p class="q-label">Bonusfrage</p>
-        <p class="q-text">Alles klar! Und was soll es sein?</p>
-        <div class="options">
-          <button class="opt" onclick="setChoice('Sushi 🍣'); goTo('s6')">🍣 Sushi</button>
-          <button class="opt" onclick="setChoice('Pizza 🍕'); goTo('s6')">🍕 Pizza</button>
-          <button class="opt" onclick="setChoice('Pasta 🍝'); goTo('s6')">🍝 Pasta</button>
-          <button class="opt" onclick="setChoice('Steak 🥩'); goTo('s6')">🥩 Steak</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- ════════════════════════════════════════════════════════
-       SCREEN 6 · FINALE
-       Bär unten-links + Hase unten-rechts (beide malen Keramik)
-       FIX 4: Datum entfernt
-  ════════════════════════════════════════════════════════ -->
-  <div class="screen" id="s6">
-    <div class="card">
-
-      <!-- BÄR unten-links, malt Keramik -->
-      <svg class="a" style="bottom:-66px;left:-18px;width:92px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="22" cy="14" r="13" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <circle cx="22" cy="14" r="8"  fill="#a06548"/>
-        <circle cx="70" cy="14" r="13" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <circle cx="70" cy="14" r="8"  fill="#a06548"/>
-        <!-- Körper -->
-        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#e8c4a0"/>
-        <!-- linker Arm (hält Topf) -->
-        <ellipse cx="8"  cy="66" rx="9" ry="13" fill="#c4856a" stroke="#333" stroke-width="1.5" transform="rotate(-20,8,66)"/>
-        <!-- rechter Arm (hält Pinsel) -->
-        <ellipse cx="84" cy="60" rx="9" ry="13" fill="#c4856a" stroke="#333" stroke-width="1.5" transform="rotate(-30,84,60)"/>
-        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <!-- Kopf -->
-        <circle cx="46" cy="38" r="27" fill="#c4856a" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="44" rx="14" ry="10" fill="#e8c4a0" stroke="#333" stroke-width="1"/>
-        <!-- Strahlende Augen -->
-        <circle cx="34" cy="33" r="6.5" fill="#222"/>
-        <circle cx="58" cy="33" r="6.5" fill="#222"/>
-        <circle cx="36" cy="30" r="2.5" fill="white"/>
-        <circle cx="60" cy="30" r="2.5" fill="white"/>
-        <ellipse cx="46" cy="42" rx="3" ry="2" fill="#222"/>
-        <circle cx="24" cy="41" r="8" fill="#ffb3ba" opacity=".55"/>
-        <circle cx="68" cy="41" r="8" fill="#ffb3ba" opacity=".55"/>
-        <path d="M38,49 Q46,57 54,49" fill="#cc4444"/>
-        <path d="M38,49 Q46,57 54,49" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round"/>
-        <!-- Kleiner Keramiktopf -->
-        <path d="M-14,52 Q-20,57 -18,74 Q-14,80 -6,80 Q2,80 6,74 Q8,57 2,52 Q-4,46 -6,46 Q-10,46 -14,52Z" fill="#d4b896" stroke="#b89870" stroke-width="1.5"/>
-        <circle cx="-6" cy="62" r="4.5" fill="#ff8fab" opacity=".9"/>
-        <circle cx="-6" cy="58" r="2.5" fill="#ff8fab"/>
-        <circle cx="-3" cy="62" r="2.5" fill="#ff8fab"/>
-        <circle cx="-6" cy="66" r="2.5" fill="#ff8fab"/>
-        <circle cx="-9" cy="62" r="2.5" fill="#ff8fab"/>
-        <circle cx="-6" cy="62" r="2.5" fill="white"/>
-        <!-- Pinsel -->
-        <rect x="88" y="39" width="4" height="22" rx="2" fill="#5c3a10"/>
-        <ellipse cx="90" cy="37" rx="3.5" ry="7" fill="#d8d8d8"/>
-        <ellipse cx="90" cy="33" rx="3"   ry="2.5" fill="#9b59b6"/>
-      </svg>
-
-      <!-- HASE unten-rechts, malt Keramik -->
-      <svg class="a" style="bottom:-66px;right:-18px;width:90px" viewBox="0 0 92 108" xmlns="http://www.w3.org/2000/svg">
-        <ellipse cx="30" cy="6"  rx="11" ry="24" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="62" cy="6"  rx="11" ry="24" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="30" cy="6"  rx="6.5" ry="17" fill="#ffc8d0"/>
-        <ellipse cx="62" cy="6"  rx="6.5" ry="17" fill="#ffc8d0"/>
-        <!-- Körper -->
-        <ellipse cx="46" cy="76" rx="34" ry="26" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="80" rx="21" ry="17" fill="#ede5de"/>
-        <!-- linker Arm (hält Pinsel) -->
-        <ellipse cx="8"  cy="60" rx="9" ry="13" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(-30,8,60)"/>
-        <!-- rechter Arm -->
-        <ellipse cx="84" cy="68" rx="9" ry="13" fill="#f5f0ec" stroke="#333" stroke-width="1.5" transform="rotate(12,84,68)"/>
-        <ellipse cx="32" cy="97" rx="13" ry="7" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="60" cy="97" rx="13" ry="7" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <!-- Kopf -->
-        <circle cx="46" cy="42" r="27" fill="#f5f0ec" stroke="#333" stroke-width="1.5"/>
-        <ellipse cx="46" cy="49" rx="13" ry="9" fill="#ede5de" stroke="#333" stroke-width="1"/>
-        <!-- Strahlende Augen -->
-        <circle cx="34" cy="37" r="6.5" fill="#222"/>
-        <circle cx="58" cy="37" r="6.5" fill="#222"/>
-        <circle cx="36" cy="34" r="2.5" fill="white"/>
-        <circle cx="60" cy="34" r="2.5" fill="white"/>
-        <ellipse cx="46" cy="47" rx="3" ry="2" fill="#ffb3ba"/>
-        <circle cx="24" cy="45" r="8" fill="#ffb3ba" opacity=".5"/>
-        <circle cx="68" cy="45" r="8" fill="#ffb3ba" opacity=".5"/>
-        <path d="M38,54 Q46,62 54,54" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round"/>
-        <!-- Pinsel (zur anderen Seite gerichtet) -->
-        <rect x="-4" y="40" width="4" height="22" rx="2" fill="#5c3a10"/>
-        <ellipse cx="-2" cy="38" rx="3.5" ry="7" fill="#d8d8d8"/>
-        <ellipse cx="-2" cy="34" rx="3"   ry="2.5" fill="#6b9fff"/>
-        <!-- Kleines fertiges Keramikstück -->
-        <rect x="86" y="56" width="18" height="22" rx="5" fill="#d4b896" stroke="#b89870" stroke-width="1.2"/>
-        <ellipse cx="95" cy="56" rx="9" ry="4" fill="#d4b896" stroke="#b89870" stroke-width="1"/>
-        <circle cx="91" cy="65" r="3"   fill="#6b9fff" opacity=".9"/>
-        <circle cx="98" cy="70" r="2.5" fill="#ff8fab" opacity=".9"/>
-        <text   x="88"  y="60" font-size="8" fill="#f39c12" opacity=".8">★</text>
-      </svg>
-
-      <div class="card-body" style="padding-bottom:44px">
-        <span class="finale-badge">Das Date-Abenteuer enthüllt sich …</span>
-        <!-- FIX 4: Datum entfernt – nur noch die Wahl aus Schritt 4 -->
-        <p class="finale-sentence">
-          Bist du bereit für einen Nachmittag voller
-          <span class="highlight">Keramik-Katastrophen</span>,
-          gefolgt von
-          <span class="highlight" id="choiceText">…</span>?
-        </p>
-        <!-- ANPASSEN: Hinweis-Text -->
-        <p class="finale-hint" id="finaleHint">
-          Ort &amp; Uhrzeit folgen – ich hab alles geplant 😏<br>
-          Tipp: Kleider einplanen, die du auch bekleckern darfst.
-        </p>
-        <button class="yes-btn" onclick="celebrate()">JA! 🎉</button>
-      </div>
-    </div>
-  </div>
-
-</div><!-- /game -->
-
-
-<!-- CELEBRATION OVERLAY -->
-<div id="celebration">
-  <div class="celeb-card">
-    <span class="celeb-icon" id="celebIcon">🥂</span>
-    <p class="celeb-title" id="celebTitle">Perfekt – es ist ein Date! 💜</p>
-    <p class="celeb-body"  id="celebBody">Ich freu mich so sehr! Du kriegst alle Details rechtzeitig.</p>
-    <button class="celeb-close" onclick="document.getElementById('celebration').classList.remove('show')">Schließen</button>
-  </div>
-</div>
-
+  <main class="karte" role="main">
+    <div class="fortschritt" id="fortschritt" aria-hidden="true"></div>
+    <div id="buehne"></div>
+  </main>
+  <canvas id="konfetti"></canvas>
 
 <script>
-  /* ==============================================================
-     KONFIGURATION – hier anpassen
-  ============================================================== */
-  const CONFIG = {
-    // ANPASSEN: Hinweis unter dem Einladungssatz (false = ausblenden)
-    hint: "Ort &amp; Uhrzeit folgen – ich hab alles geplant 😏<br>Tipp: Kleider einplanen, die du auch bekleckern darfst.",
-    // ANPASSEN: Reaktion nach JA!-Klick
-    celebration: {
-      icon:  "🥂",
-      title: "Perfekt – es ist ein Date! 💜",
-      body:  "Ich freu mich so sehr! Du kriegst alle Details rechtzeitig.",
-    },
-  };
+/* ================================================================
+   ⚙️  KONFIG
+   ================================================================ */
+const KONFIG = {
+  datum: "am kommenden Wochenende",
+  intro: "Ich hätte da eine Idee …",
 
-  function goTo(id) {
-    const current = document.querySelector(".screen.active");
-    const next    = document.getElementById(id);
-    if (!next || next === current) return;
-    if (current) current.classList.remove("active");
-    next.classList.add("active");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  /* ----- Startseite (Date-Frage mit flüchtendem NEIN-Button) ----- */
+  startBraue:   "Bevor wir anfangen …",
+  startFrage:   "Willst du mit mir ein Date haben?",
+  startJa:      "JA! 💕",
+  startNein:    "Nein",
+  /* Freche Sprüche, falls sie den NEIN-Button doch erwischt.
+     Es wird der Reihe nach durchgewechselt. Frei änderbar/erweiterbar. */
+  neinReaktionen: [
+    "Hihi, der Button ist schneller als du 😜",
+    "Netter Versuch! Aber „Nein“ steht hier nicht zur Auswahl 😏",
+    "Du meinst sicher JA, oder? 🥺",
+    "Erwischt! Trotzdem zählt nur das große JA 💕"
+  ],
+  finaleVorText:  "Bist du bereit für einen Nachmittag voller",
+  finaleHighlight: "Keramik-Katastrophen",
+  finaleNachText: "gefolgt von",
+  jaButtonText:   "JA!",
+  belohnungEmoji:    "🏺💕",
+  belohnungTitel:    "Date gebucht!",
+  belohnungText:     "Du hast soeben offiziell zugesagt. Rückzug zwecklos – " +
+                     "es gibt schon einen Tisch in meinem Kopf.",
+  gutscheinText:     "🎟️ 1× Gutschein: Ich übernehme die Rechnung & lache nicht (zu laut) über deine Vase.",
+
+  /* ----------------------------------------------------------------
+     📧  E-MAIL-BENACHRICHTIGUNG via Formspree (optional)
+     ----------------------------------------------------------------
+     So aktivierst du die Mail beim Klick auf „JA!":
+       1. Auf https://formspree.io kostenlos registrieren.
+       2. Neues Formular anlegen -> du bekommst eine Endpunkt-URL
+          der Form  https://formspree.io/f/XXXXXXXX
+       3. Diese URL unten bei  formspreeEndpoint  eintragen.
+     Lässt du den Wert leer (""), wird einfach keine Mail verschickt –
+     das Spiel funktioniert trotzdem ganz normal weiter.
+
+     Hinweis: Das läuft im Browser. Wenn deine Frau offline ist, den
+     Tab sofort schließt oder einen strengen Blocker nutzt, kommt die
+     Mail evtl. nicht an. Für eine Date-Einladung reicht das aber gut. */
+  formspreeEndpoint: ""   // z.B. "https://formspree.io/f/abcdwxyz"
+};
+
+/* ================================================================
+   🎨  TIERE  –  Kawaii-Tierchen als Inline-SVG
+   ----------------------------------------------------------------
+   Eigene Zeichnungen im niedlichen Sticker-Stil (runde Körper,
+   Punkt-Augen, Bäckchen). Pro Seite werden 2–3 davon gezeigt.
+   makeAnimal({type, color, face, front, ...}) baut ein Tier.
+     type : 'cat' | 'bear' | 'bunny' | 'fox' | 'frog' | 'mouse' | 'pig'
+     face : 'happy' | 'love' | 'focus' | 'nervous' | 'dizzy'
+     front: zusätzliches SVG VOR dem Körper (Hüte, Essen, Pinsel …)
+   ================================================================ */
+const OUT = "#4a3a2f";                                   // Outline-Farbe
+const S   = `stroke="${OUT}" stroke-width="3" stroke-linejoin="round"`;
+
+function earsSVG(o){
+  const C = o.color, IN = o.inner || "#f4a9bd";
+  switch(o.type){
+    case 'cat': case 'fox':
+      return `<path d="M31 52 L34 30 L50 48 Z" fill="${C}" ${S}/>
+              <path d="M69 52 L66 30 L50 48 Z" fill="${C}" ${S}/>
+              <path d="M36 45 L37 36 L44 45 Z" fill="${IN}"/>
+              <path d="M64 45 L63 36 L56 45 Z" fill="${IN}"/>`;
+    case 'bear':
+      return `<circle cx="33" cy="47" r="10" fill="${C}" ${S}/><circle cx="67" cy="47" r="10" fill="${C}" ${S}/>
+              <circle cx="33" cy="47" r="5" fill="${IN}"/><circle cx="67" cy="47" r="5" fill="${IN}"/>`;
+    case 'mouse':
+      return `<circle cx="32" cy="46" r="12" fill="${C}" ${S}/><circle cx="68" cy="46" r="12" fill="${C}" ${S}/>
+              <circle cx="32" cy="46" r="7" fill="${IN}"/><circle cx="68" cy="46" r="7" fill="${IN}"/>`;
+    case 'bunny':
+      return `<ellipse cx="41" cy="30" rx="7" ry="19" transform="rotate(-10 41 30)" fill="${C}" ${S}/>
+              <ellipse cx="59" cy="30" rx="7" ry="19" transform="rotate(10 59 30)" fill="${C}" ${S}/>
+              <ellipse cx="41" cy="31" rx="3" ry="13" transform="rotate(-10 41 31)" fill="${IN}"/>
+              <ellipse cx="59" cy="31" rx="3" ry="13" transform="rotate(10 59 31)" fill="${IN}"/>`;
+    case 'pig':
+      return `<path d="M33 52 L30 40 L45 48 Z" fill="${C}" ${S}/><path d="M67 52 L70 40 L55 48 Z" fill="${C}" ${S}/>`;
+    default: return "";
+  }
+}
+
+function faceSVG(o){
+  const cheeks = `<ellipse cx="34" cy="83" rx="5.5" ry="3.6" fill="#f4a9bd" opacity=".55"/>
+                  <ellipse cx="66" cy="83" rx="5.5" ry="3.6" fill="#f4a9bd" opacity=".55"/>`;
+  const muzzle = o.muzzle ? `<ellipse cx="50" cy="82" rx="13" ry="9" fill="#fff"/>` : "";
+
+  if(o.type === 'frog'){
+    const pupil = o.face==='focus' ? 3 : 4;
+    const eyes = `<circle cx="40" cy="48" r="9" fill="#fff" stroke="${OUT}" stroke-width="2.5"/>
+                  <circle cx="60" cy="48" r="9" fill="#fff" stroke="${OUT}" stroke-width="2.5"/>
+                  <circle cx="41" cy="49" r="${pupil}" fill="#3a2c22"/><circle cx="61" cy="49" r="${pupil}" fill="#3a2c22"/>
+                  <circle cx="39.6" cy="47.6" r="1.3" fill="#fff"/><circle cx="59.6" cy="47.6" r="1.3" fill="#fff"/>`;
+    const brows = o.face==='focus'
+      ? `<line x1="33" y1="40" x2="44" y2="42" stroke="${OUT}" stroke-width="2.4" stroke-linecap="round"/>
+         <line x1="67" y1="40" x2="56" y2="42" stroke="${OUT}" stroke-width="2.4" stroke-linecap="round"/>` : "";
+    const mouth = `<path d="M38 86 Q50 96 62 86" stroke="${OUT}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+    return muzzle + eyes + brows + cheeks + mouth;
   }
 
-  function setChoice(text) {
-    document.getElementById("choiceText").textContent = text;
+  let eyes, mouth, brows = "";
+  switch(o.face){
+    case 'love':
+      eyes  = `<path d="M36 74 q5 -6 10 0" stroke="${OUT}" stroke-width="3" fill="none" stroke-linecap="round"/>
+               <path d="M54 74 q5 -6 10 0" stroke="${OUT}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+      mouth = `<path d="M44 84 Q50 91 56 84" stroke="${OUT}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+      break;
+    case 'focus':
+      brows = `<line x1="36" y1="66" x2="46" y2="69" stroke="${OUT}" stroke-width="2.6" stroke-linecap="round"/>
+               <line x1="64" y1="66" x2="54" y2="69" stroke="${OUT}" stroke-width="2.6" stroke-linecap="round"/>`;
+      eyes  = `<circle cx="42" cy="73" r="3.4" fill="#3a2c22"/><circle cx="58" cy="73" r="3.4" fill="#3a2c22"/>`;
+      mouth = `<path d="M46 85 L54 85" stroke="${OUT}" stroke-width="2.6" stroke-linecap="round"/>`;
+      break;
+    case 'nervous':
+      eyes  = `<circle cx="42" cy="72" r="4.4" fill="#3a2c22"/><circle cx="58" cy="72" r="4.4" fill="#3a2c22"/>
+               <circle cx="40.7" cy="70.5" r="1.3" fill="#fff"/><circle cx="56.7" cy="70.5" r="1.3" fill="#fff"/>`;
+      mouth = `<path d="M45 86 q3 -3 5 0 q2 3 5 0" stroke="${OUT}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+      break;
+    case 'dizzy':
+      eyes  = `<path d="M38 69 L46 76 M46 69 L38 76" stroke="${OUT}" stroke-width="2.6" stroke-linecap="round"/>
+               <path d="M54 69 L62 76 M62 69 L54 76" stroke="${OUT}" stroke-width="2.6" stroke-linecap="round"/>`;
+      mouth = `<circle cx="50" cy="87" r="2.6" fill="none" stroke="${OUT}" stroke-width="2.4"/>`;
+      break;
+    case 'excited':
+      // große, glänzende Sterne-Augen + weit offener Freuden-Mund
+      eyes  = `<circle cx="42" cy="72" r="6" fill="#3a2c22"/><circle cx="58" cy="72" r="6" fill="#3a2c22"/>
+               <circle cx="39.8" cy="69.8" r="2" fill="#fff"/><circle cx="55.8" cy="69.8" r="2" fill="#fff"/>
+               <circle cx="44" cy="74" r="1" fill="#fff"/><circle cx="60" cy="74" r="1" fill="#fff"/>`;
+      mouth = `<path d="M43 83 Q50 93 57 83 Q50 87 43 83 Z" fill="#b5485e" stroke="${OUT}" stroke-width="2.2" stroke-linejoin="round"/>`;
+      break;
+    default: // happy
+      eyes  = `<circle cx="42" cy="72" r="4.6" fill="#3a2c22"/><circle cx="58" cy="72" r="4.6" fill="#3a2c22"/>
+               <circle cx="40.6" cy="70.4" r="1.4" fill="#fff"/><circle cx="56.6" cy="70.4" r="1.4" fill="#fff"/>`;
+      mouth = `<path d="M45 84 Q50 89 55 84" stroke="${OUT}" stroke-width="2.6" fill="none" stroke-linecap="round"/>`;
   }
+  return muzzle + brows + eyes + cheeks + mouth;
+}
 
-  function celebrate() {
-    document.getElementById("celebration").classList.add("show");
+function makeAnimal(o){
+  const belly = o.belly ? `<ellipse cx="50" cy="84" rx="15" ry="17" fill="${o.belly}"/>` : "";
+  const body  = `<rect x="26" y="48" width="48" height="56" rx="24" fill="${o.color}" ${S}/>`;
+  return `<svg class="tier" viewBox="0 0 100 122" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">`
+       + (o.behind || "") + earsSVG(o) + body + belly + faceSVG(o) + (o.front || "")
+       + `</svg>`;
+}
+
+/* --- die einzelnen Tierchen (per Schlüssel abrufbar) --- */
+const TIERE = {
+  /* Seite 1 – Herausforderung / blamieren */
+  foxFlex: () => makeAnimal({ type:'cat', color:'#d8744f', inner:'#f4c4b0', muzzle:true, face:'happy',
+    front:`<path d="M28 74 Q22 66 24 60" stroke="#d8744f" stroke-width="7" fill="none" stroke-linecap="round"/>
+           <ellipse cx="22" cy="59" rx="6.5" ry="7.5" fill="#d8744f" ${S}/>
+           <path d="M15 50 l2 4 l4 2 l-4 2 l-2 4 l-2 -4 l-4 -2 l4 -2 Z" fill="#f0c987"/>` }),
+  bunnyNervous: () => makeAnimal({ type:'bunny', color:'#f3e7d8', inner:'#f4c4cf', face:'nervous',
+    front:`<path d="M73 54 q4 7 0 11 q-4 -4 0 -11 Z" fill="#9bd4ec" stroke="#5aa6c9" stroke-width="1.5"/>
+           <ellipse cx="36" cy="100" rx="6" ry="6.5" fill="#f3e7d8" ${S}/>
+           <ellipse cx="64" cy="100" rx="6" ry="6.5" fill="#f3e7d8" ${S}/>` }),
+  catCheer: () => makeAnimal({ type:'cat', color:'#cfd6da', inner:'#f4c4cf', face:'love',
+    front:`<path d="M70 56 q3 -4 6 0 q3 -4 6 0 q0 5 -6 9 q-6 -4 -6 -9 Z" fill="#e0607a"/>` }),
+
+  /* Seite 2 – Vibe / Dreck */
+  frogCalm: () => makeAnimal({ type:'frog', color:'#8fbf86', inner:'#cfe6c2', face:'happy',
+    front:`<path d="M40 100 q10 6 20 0" stroke="${OUT}" stroke-width="3" fill="none" stroke-linecap="round"/>
+           <path d="M74 56 l1.5 3 l3 1.5 l-3 1.5 l-1.5 3 l-1.5 -3 l-3 -1.5 l3 -1.5 Z" fill="#f0c987"/>` }),
+  catMessy: () => makeAnimal({ type:'cat', color:'#e8c9a0', inner:'#f4c4cf', face:'happy', belly:'#f6e6cf',
+    front:`<ellipse cx="40" cy="90" rx="4.5" ry="3.3" fill="#3f7d78" transform="rotate(18 40 90)"/>
+           <circle cx="61" cy="84" r="3.6" fill="#d8744f"/>
+           <path d="M50 96 q5 -3 9 1" stroke="#f0c987" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+           <circle cx="68" cy="74" r="2.4" fill="#3f7d78"/>` }),
+  bearArtist: () => makeAnimal({ type:'bear', color:'#b98a63', inner:'#e7c8a8', face:'happy',
+    front:`<g transform="translate(26 92) rotate(-12)">
+             <ellipse cx="0" cy="0" rx="13" ry="9" fill="#f3e3cf" stroke="${OUT}" stroke-width="2.5"/>
+             <circle cx="8" cy="-1" r="3" fill="none" stroke="${OUT}" stroke-width="2"/>
+             <circle cx="-6" cy="-2" r="2.5" fill="#d8744f"/><circle cx="0" cy="-4" r="2.5" fill="#3f7d78"/>
+             <circle cx="-2" cy="3" r="2.5" fill="#f0c987"/><circle cx="4" cy="3" r="2.5" fill="#e07a9a"/>
+           </g>
+           <g transform="translate(74 74) rotate(28)">
+             <rect x="-2" y="0" width="4" height="20" rx="2" fill="#caa06a" stroke="${OUT}" stroke-width="1.5"/>
+             <path d="M-3.5 0 L3.5 0 L1.5 -9 L-1.5 -9 Z" fill="#3f7d78" stroke="${OUT}" stroke-width="1.5" stroke-linejoin="round"/>
+           </g>` }),
+
+  /* Seite 3 – Feinmotorik / Nadelöhr */
+  frogFocus: () => makeAnimal({ type:'frog', color:'#7fb59b', inner:'#cfe6c2', face:'focus',
+    front:`<g transform="translate(70 72) rotate(-18)">
+             <line x1="0" y1="14" x2="0" y2="-14" stroke="#9aa0a6" stroke-width="2"/>
+             <ellipse cx="0" cy="-14" rx="2.4" ry="3.6" fill="none" stroke="#9aa0a6" stroke-width="1.6"/>
+             <path d="M0 14 q9 5 5 15" stroke="#d8744f" stroke-width="2" fill="none"/>
+           </g>
+           <ellipse cx="63" cy="92" rx="6" ry="6.5" fill="#7fb59b" ${S}/>` }),
+  pigClumsy: () => makeAnimal({ type:'pig', color:'#efb6bf', inner:'#f8d3da', face:'dizzy',
+    front:`<ellipse cx="50" cy="82" rx="9" ry="6.5" fill="#e79aa6" stroke="${OUT}" stroke-width="2.5"/>
+           <circle cx="46.5" cy="82" r="1.5" fill="${OUT}"/><circle cx="53.5" cy="82" r="1.5" fill="${OUT}"/>
+           <g transform="translate(66 73) rotate(28)">
+             <rect x="-6" y="-3" width="12" height="6" rx="3" fill="#f6d6a8" stroke="#c79a66" stroke-width="1.4"/>
+             <line x1="0" y1="-3" x2="0" y2="3" stroke="#c79a66" stroke-width="1"/></g>` }),
+  mousePeek: () => makeAnimal({ type:'mouse', color:'#cfc6bd', inner:'#f4c4cf', face:'happy' }),
+
+  /* Seite 4 – Erschöpfung: Kino vs. Essen */
+  foxPopcorn: () => makeAnimal({ type:'cat', color:'#d8744f', inner:'#f4c4b0', muzzle:true, face:'happy',
+    front:`<g transform="translate(50 90)">
+             <path d="M-12 0 L12 0 L9 18 L-9 18 Z" fill="#fff" stroke="${OUT}" stroke-width="2.5" stroke-linejoin="round"/>
+             <path d="M-7 0 L-8 18M0 0 L0 18M7 0 L8 18" stroke="#e05a4f" stroke-width="3"/>
+             <circle cx="-6" cy="-3" r="3.4" fill="#fce9c0" stroke="${OUT}" stroke-width="1.4"/>
+             <circle cx="0" cy="-5" r="3.6" fill="#fce9c0" stroke="${OUT}" stroke-width="1.4"/>
+             <circle cx="6" cy="-3" r="3.4" fill="#fce9c0" stroke="${OUT}" stroke-width="1.4"/>
+             <circle cx="-2" cy="-7" r="2.6" fill="#fce9c0" stroke="${OUT}" stroke-width="1.4"/>
+           </g>
+           <ellipse cx="33" cy="92" rx="6" ry="6.5" fill="#d8744f" ${S}/>` }),
+  chefCat: () => makeAnimal({ type:'cat', color:'#f0d9b8', inner:'#f4c4cf', face:'happy',
+    front:`<ellipse cx="50" cy="24" rx="17" ry="11" fill="#fff" stroke="${OUT}" stroke-width="2.6"/>
+           <ellipse cx="38" cy="27" rx="9" ry="8" fill="#fff" stroke="${OUT}" stroke-width="2.6"/>
+           <ellipse cx="62" cy="27" rx="9" ry="8" fill="#fff" stroke="${OUT}" stroke-width="2.6"/>
+           <rect x="39" y="30" width="22" height="12" rx="3" fill="#fff" stroke="${OUT}" stroke-width="2.6"/>
+           <g transform="translate(73 78) rotate(30)">
+             <rect x="-2" y="-2" width="4" height="20" rx="2" fill="#caa06a" stroke="${OUT}" stroke-width="1.5"/>
+             <ellipse cx="0" cy="-6" rx="5" ry="7" fill="#d9b384" stroke="${OUT}" stroke-width="1.5"/></g>
+           <ellipse cx="70" cy="92" rx="6" ry="6.5" fill="#f0d9b8" ${S}/>` }),
+  bearPizza: () => makeAnimal({ type:'bear', color:'#c79a6e', inner:'#e7c8a8', face:'happy',
+    front:`<ellipse cx="38" cy="96" rx="6" ry="6.5" fill="#c79a6e" ${S}/>
+           <ellipse cx="62" cy="96" rx="6" ry="6.5" fill="#c79a6e" ${S}/>
+           <g transform="translate(50 86)">
+             <path d="M0 -15 L-12 7 Q0 11 12 7 Z" fill="#f6c453" stroke="${OUT}" stroke-width="2.5" stroke-linejoin="round"/>
+             <path d="M-12 7 Q0 11 12 7 L11 10 Q0 14 -11 10 Z" fill="#d8744f" stroke="${OUT}" stroke-width="2.5" stroke-linejoin="round"/>
+             <circle cx="-3" cy="-3" r="2.2" fill="#c0392b"/><circle cx="4" cy="2" r="2.2" fill="#c0392b"/>
+             <circle cx="1" cy="-8" r="1.8" fill="#c0392b"/></g>` }),
+
+  /* Essens-Untermenü */
+  sushiCat: () => makeAnimal({ type:'cat', color:'#cfd6da', inner:'#f4c4cf', face:'happy',
+    front:`<g transform="translate(50 88)">
+             <rect x="-13" y="-2" width="26" height="11" rx="5.5" fill="#fdf0e0" stroke="${OUT}" stroke-width="2.5"/>
+             <path d="M-13 -2 Q0 -12 13 -2 Q0 -8 -13 0 Z" fill="#e8755a" stroke="${OUT}" stroke-width="2.5" stroke-linejoin="round"/>
+             <rect x="-4.5" y="-2" width="9" height="11" rx="1.5" fill="#3a6b4f"/></g>
+           <ellipse cx="33" cy="92" rx="6" ry="6.5" fill="#cfd6da" ${S}/>
+           <ellipse cx="67" cy="92" rx="6" ry="6.5" fill="#cfd6da" ${S}/>` }),
+  steakBear: () => makeAnimal({ type:'bear', color:'#c79a6e', inner:'#e7c8a8', face:'happy',
+    front:`<g transform="translate(50 88)">
+             <path d="M-13 -5 Q0 -13 13 -5 Q16 6 0 9 Q-16 6 -13 -5 Z" fill="#a4583b" stroke="${OUT}" stroke-width="2.5" stroke-linejoin="round"/>
+             <path d="M-7 -3 L5 4M0 -6 L9 1" stroke="#6e3a26" stroke-width="2" stroke-linecap="round"/>
+             <circle cx="12" cy="-6" r="4" fill="#f3e9d8" stroke="${OUT}" stroke-width="1.6"/></g>
+           <ellipse cx="34" cy="94" rx="6" ry="6.5" fill="#c79a6e" ${S}/>` }),
+
+  /* Finale – Keramik bemalen */
+  painterBunny: () => makeAnimal({ type:'bunny', color:'#f3e7d8', inner:'#f4c4cf', face:'happy',
+    front:`<g transform="translate(28 92) rotate(-14)">
+             <ellipse cx="0" cy="0" rx="12" ry="8.5" fill="#f3e3cf" stroke="${OUT}" stroke-width="2.5"/>
+             <circle cx="7" cy="-1" r="2.8" fill="none" stroke="${OUT}" stroke-width="2"/>
+             <circle cx="-6" cy="-2" r="2.4" fill="#d8744f"/><circle cx="-1" cy="-4" r="2.4" fill="#3f7d78"/>
+             <circle cx="-2" cy="3" r="2.4" fill="#f0c987"/></g>` }),
+  painterCat: () => makeAnimal({ type:'cat', color:'#e8a05c', inner:'#f4c4b0', muzzle:true, face:'happy',
+    front:`<g transform="translate(72 80) rotate(40)">
+             <rect x="-2" y="0" width="4" height="18" rx="2" fill="#caa06a" stroke="${OUT}" stroke-width="1.5"/>
+             <path d="M-3.5 0 L3.5 0 L1.5 -9 L-1.5 -9 Z" fill="#d8744f" stroke="${OUT}" stroke-width="1.5" stroke-linejoin="round"/></g>
+           <ellipse cx="70" cy="92" rx="6" ry="6.5" fill="#e8a05c" ${S}/>` }),
+  vaseArt: () => `<svg class="tier vase" viewBox="0 0 100 122" xmlns="http://www.w3.org/2000/svg" style="overflow:visible">
+             <ellipse cx="50" cy="108" rx="20" ry="5" fill="#cdbfae"/>
+             <path d="M40 96 L60 96 L57 104 L43 104 Z" fill="#b9a892" stroke="${OUT}" stroke-width="2.5" stroke-linejoin="round"/>
+             <path d="M40 60 Q34 74 38 86 Q40 96 50 96 Q60 96 62 86 Q66 74 60 60 Q56 54 50 54 Q44 54 40 60 Z" fill="#ecdcc6" ${S}/>
+             <path d="M44 56 Q50 50 56 56" fill="none" stroke="${OUT}" stroke-width="3" stroke-linecap="round"/>
+             <path d="M37 74 Q50 80 63 74" stroke="#d8744f" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+             <circle cx="44" cy="84" r="2.6" fill="#3f7d78"/><circle cx="50" cy="86" r="2.6" fill="#3f7d78"/><circle cx="56" cy="84" r="2.6" fill="#3f7d78"/>
+             <path d="M66 58 l1.5 3 l3 1.5 l-3 1.5 l-1.5 3 l-1.5 -3 l-3 -1.5 l3 -1.5 Z" fill="#f0c987"/>
+           </svg>`,
+
+  /* Belohnung – Party */
+  partyFox: () => makeAnimal({ type:'cat', color:'#d8744f', inner:'#f4c4b0', muzzle:true, face:'love',
+    front:`<g transform="translate(50 30)">
+             <path d="M0 -18 L-11 6 L11 6 Z" fill="#3f7d78" stroke="${OUT}" stroke-width="2.5" stroke-linejoin="round"/>
+             <circle cx="0" cy="-18" r="3.2" fill="#f0c987" stroke="${OUT}" stroke-width="1.4"/>
+             <circle cx="-4" cy="-2" r="2" fill="#fff"/><circle cx="4" cy="1" r="2" fill="#fff"/></g>` }),
+  partyBear: () => makeAnimal({ type:'bear', color:'#b98a63', inner:'#e7c8a8', face:'happy',
+    front:`<circle cx="22" cy="46" r="2.4" fill="#d8744f"/>
+           <rect x="74" y="48" width="5" height="5" fill="#3f7d78" transform="rotate(20 76 50)"/>
+           <circle cx="78" cy="70" r="2.2" fill="#f0c987"/>
+           <path d="M20 70 l4 0M22 68 l0 4" stroke="#e0607a" stroke-width="2"/>` }),
+  partyBunny: () => makeAnimal({ type:'bunny', color:'#f3e7d8', inner:'#f4c4cf', face:'love',
+    front:`<path d="M70 54 q3 -4 6 0 q3 -4 6 0 q0 5 -6 9 q-6 -4 -6 -9 Z" fill="#e0607a"/>
+           <path d="M18 60 q2.5 -3 5 0 q2.5 -3 5 0 q0 4 -5 7 q-5 -3 -5 -7 Z" fill="#e0607a"/>` }),
+
+  /* Startseite – vor Spannung fast platzend (zappeln per CSS-Klasse) */
+  hypeFox: () => makeAnimal({ type:'cat', color:'#d8744f', inner:'#f4c4b0', muzzle:true, face:'excited',
+    front:`<path d="M28 72 Q20 64 23 56" stroke="#d8744f" stroke-width="7" fill="none" stroke-linecap="round"/>
+           <ellipse cx="22" cy="55" rx="6.5" ry="7.5" fill="#d8744f" ${S}/>
+           <path d="M72 72 Q80 64 77 56" stroke="#d8744f" stroke-width="7" fill="none" stroke-linecap="round"/>
+           <ellipse cx="78" cy="55" rx="6.5" ry="7.5" fill="#d8744f" ${S}/>
+           <path d="M14 46 l1.5 3 l3 1.5 l-3 1.5 l-1.5 3 l-1.5 -3 l-3 -1.5 l3 -1.5 Z" fill="#f0c987"/>
+           <path d="M86 46 l1.5 3 l3 1.5 l-3 1.5 l-1.5 3 l-1.5 -3 l-3 -1.5 l3 -1.5 Z" fill="#f0c987"/>` }),
+  hypeBear: () => makeAnimal({ type:'bear', color:'#b98a63', inner:'#e7c8a8', face:'excited',
+    front:`<path d="M26 74 Q18 66 21 58" stroke="#b98a63" stroke-width="8" fill="none" stroke-linecap="round"/>
+           <circle cx="20" cy="57" r="6.5" fill="#b98a63" ${S}/>
+           <path d="M74 74 Q82 66 79 58" stroke="#b98a63" stroke-width="8" fill="none" stroke-linecap="round"/>
+           <circle cx="80" cy="57" r="6.5" fill="#b98a63" ${S}/>
+           <path d="M12 52 l1.3 2.6 l2.6 1.3 l-2.6 1.3 l-1.3 2.6 l-1.3 -2.6 l-2.6 -1.3 l2.6 -1.3 Z" fill="#e0607a"/>
+           <path d="M88 52 l1.3 2.6 l2.6 1.3 l-2.6 1.3 l-1.3 2.6 l-1.3 -2.6 l-2.6 -1.3 l2.6 -1.3 Z" fill="#e0607a"/>` }),
+};
+
+/* Baut eine Tier-Szene aus einer Liste von Schlüsseln */
+function szeneHTML(keys){
+  if(!keys || !keys.length) return "";
+  return `<div class="szene">` + keys.map(k => (TIERE[k] ? TIERE[k]() : "")).join("") + `</div>`;
+}
+
+/* ================================================================
+   📝  FRAGEN  –  Texte, Optionen & Tierchen je Seite (szene)
+   ----------------------------------------------------------------
+   ziel: fehlt        -> nächste Frage
+   ziel: "essen"      -> öffnet das Essens-Untermenü
+   ziel: "finale"     -> springt ins Finale (ergebnis = Text dort)
+   szene: Liste von TIERE-Schlüsseln (2–3 Stück)
+   ================================================================ */
+const FRAGEN = [
+  {
+    braue: "Frage 1",
+    text:  "Bist du heute bereit, dich einer Herausforderung zu stellen, die deine Geduld (und meine künstlerischen Fähigkeiten) massiv auf die Probe stellt?",
+    szene: ["foxFlex", "bunnyNervous", "catCheer"],
+    optionen: [
+      { label: "Ich liebe Herausforderungen" },
+      { label: "Hängt davon ab, wie sehr wir uns blamieren" }
+    ]
+  },
+  {
+    braue: "Frage 2",
+    text:  "Wir brauchen eine Umgebung, in der es okay ist, wenn wir uns mit „Dreck“ beschmutzen. Welcher Vibe passt zu uns?",
+    szene: ["frogCalm", "catMessy", "bearArtist"],
+    optionen: [
+      { label: "Stille, konzentrierte Umgebung" },
+      { label: "Lautes, kreatives Chaos" }
+    ]
+  },
+  {
+    braue: "Frage 3",
+    text:  "Wie gut ist deine Feinmotorik ohne Smartphone?",
+    szene: ["frogFocus", "mousePeek", "pigClumsy"],
+    optionen: [
+      { label: "Ich treffe jedes Nadelöhr" },
+      { label: "Ich bin froh, wenn ich nichts um mich herum bekleckere" }
+    ]
+  },
+  {
+    braue: "Frage 4",
+    text:  "Wenn der kreative Teil überstanden ist: Was hilft am besten gegen die Erschöpfung?",
+    szene: ["foxPopcorn", "chefCat", "bearPizza"],
+    optionen: [
+      { label: "Kino-Popcorn-Koma", ziel: "finale", ergebnis: "einem Kino-Popcorn-Koma 🍿" },
+      { label: "Essen!", ziel: "essen" }
+    ]
   }
+];
 
-  function init() {
-    const hintEl = document.getElementById("finaleHint");
-    if (hintEl) {
-      if (CONFIG.hint) hintEl.innerHTML = CONFIG.hint;
-      else hintEl.style.display = "none";
+const ESSEN = {
+  braue: "Und jetzt der wichtigste Teil …",
+  text:  "Worauf hättest du danach Appetit?",
+  szene: ["chefCat", "sushiCat", "steakBear"],
+  optionen: [
+    { label: "🍣 Sushi", ziel: "finale", ergebnis: "Sushi 🍣" },
+    { label: "🍕 Pizza", ziel: "finale", ergebnis: "Pizza 🍕" },
+    { label: "🍝 Pasta", ziel: "finale", ergebnis: "Pasta 🍝" },
+    { label: "🥩 Steak", ziel: "finale", ergebnis: "einem Steak 🥩" }
+  ]
+};
+
+/* ================================================================
+   🎬  ABLAUF-LOGIK
+   ================================================================ */
+const buehne      = document.getElementById("buehne");
+const fortschritt = document.getElementById("fortschritt");
+let index = 0;
+const PUNKTE_GESAMT = FRAGEN.length + 1;
+
+function punkteAufbauen(){
+  fortschritt.innerHTML = "";
+  for(let i=0;i<PUNKTE_GESAMT;i++){
+    const p = document.createElement("span");
+    p.className = "punkt";
+    fortschritt.appendChild(p);
+  }
+}
+function punkteAktualisieren(aktiv){
+  [...fortschritt.children].forEach((p,i)=>{
+    p.classList.toggle("fertig", i < aktiv);
+    p.classList.toggle("aktiv",  i === aktiv);
+  });
+}
+
+function frageZeigen(frage, schrittNr){
+  const optionenHtml = frage.optionen.map((opt,i)=>
+    `<button class="option" data-i="${i}">${opt.label}</button>`).join("");
+  buehne.innerHTML = `
+    <section class="step sichtbar">
+      ${szeneHTML(frage.szene)}
+      ${frage.braue ? `<div class="augenbraue">${frage.braue}</div>` : ""}
+      <h2 class="frage">${frage.text}</h2>
+      <div class="optionen">${optionenHtml}</div>
+    </section>`;
+  punkteAktualisieren(schrittNr);
+  buehne.querySelectorAll(".option").forEach(btn=>{
+    btn.addEventListener("click", ()=> auswahlVerarbeiten(frage.optionen[Number(btn.dataset.i)]));
+  });
+}
+
+function auswahlVerarbeiten(opt){
+  if(opt.ziel === "finale"){
+    finaleZeigen(opt.ergebnis);
+  } else if(opt.ziel === "essen"){
+    frageZeigen(ESSEN, FRAGEN.length - 1);   // gleicher Fortschrittspunkt wie Frage 4
+  } else {
+    index++;
+    frageZeigen(FRAGEN[index], index);
+  }
+}
+
+let letzteWahl = "";   // merkt sich die Auswahl aus Schritt 4 für die E-Mail
+
+function finaleZeigen(ergebnis){
+  letzteWahl = ergebnis;
+  punkteAktualisieren(PUNKTE_GESAMT);
+  buehne.innerHTML = `
+    <section class="step sichtbar finale">
+      ${szeneHTML(["painterBunny", "vaseArt", "painterCat"])}
+      <h1>
+        ${KONFIG.finaleVorText}
+        <span class="wahl">${KONFIG.finaleHighlight}</span>,
+        ${KONFIG.finaleNachText}
+        <span class="wahl">${ergebnis}</span>?
+      </h1>
+      <span class="datum">${KONFIG.datum}</span>
+      <div><button class="ja-button" id="jaBtn">${KONFIG.jaButtonText}</button></div>
+      <button class="zurueck" id="zurueckBtn">↩ doch nochmal überlegen</button>
+    </section>`;
+  document.getElementById("jaBtn").addEventListener("click", () => {
+    benachrichtigungSenden();   // Mail auslösen (falls Endpunkt gesetzt)
+    belohnungZeigen();          // sofort weiter – nicht aufs Netzwerk warten
+  });
+  document.getElementById("zurueckBtn").addEventListener("click", neuStarten);
+}
+
+/* Schickt – falls in KONFIG ein Formspree-Endpunkt hinterlegt ist –
+   eine Mail mit der getroffenen Wahl. „Feuern und vergessen": Wir warten
+   bewusst nicht auf die Antwort, damit die Belohnung sofort erscheint.
+   Schlägt der Versand fehl, läuft das Spiel trotzdem normal weiter. */
+function benachrichtigungSenden(){
+  const url = KONFIG.formspreeEndpoint;
+  if(!url) return;   // kein Endpunkt -> nichts tun
+
+  // Klartext-Wahl ohne Emojis (für eine saubere Betreffzeile/Mail)
+  const wahlText = letzteWahl.replace(/[^\p{L}\p{N}\s\-]/gu, "").trim() || letzteWahl;
+
+  fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Accept": "application/json" },
+    body: JSON.stringify({
+      betreff: "🎉 Sie hat JA gesagt!",
+      nachricht: "Die Date-Einladung wurde angenommen.",
+      auswahl: wahlText,                       // z.B. "Pizza" oder "Kino-Popcorn-Koma"
+      zeitpunkt: new Date().toLocaleString("de-DE"),
+      _subject: "🎉 Date-Einladung angenommen: " + wahlText
+    })
+  }).catch(() => { /* Netzwerkfehler bewusst ignorieren */ });
+}
+
+function belohnungZeigen(){
+  konfettiStarten();
+  buehne.innerHTML = `
+    <section class="step sichtbar belohnung">
+      ${szeneHTML(["partyFox", "partyBear", "partyBunny"])}
+      <div style="font-size:2.4rem;margin-bottom:8px">${KONFIG.belohnungEmoji}</div>
+      <h2>${KONFIG.belohnungTitel}</h2>
+      <p>${KONFIG.belohnungText}</p>
+      <div class="gutschein">${KONFIG.gutscheinText}</div>
+      <button class="zurueck" id="nochmalBtn">↩ von vorne spielen</button>
+    </section>`;
+  document.getElementById("nochmalBtn").addEventListener("click", startseiteZeigen);
+}
+
+function neuStarten(){
+  index = 0;
+  frageZeigen(FRAGEN[0], 0);
+}
+
+/* ================================================================
+   💘  STARTSEITE  –  „Willst du mit mir ein Date haben?"
+   ----------------------------------------------------------------
+   JA  -> startet den Fragen-Pfad.
+   NEIN-> springt weg, sobald man ihn anvisiert (Maus & Touch).
+          Wird er doch erwischt, erscheint eine freche Reaktion.
+   ================================================================ */
+let neinReaktionIndex = 0;   // welcher Spruch ist als Nächstes dran
+
+function startseiteZeigen(){
+  punkteAktualisieren(-1);   // noch kein Fortschrittspunkt aktiv
+
+  buehne.innerHTML = `
+    <section class="step sichtbar start">
+      <div class="szene hype">
+        ${TIERE.hypeFox()}
+        ${TIERE.hypeBear()}
+      </div>
+      <div class="augenbraue">${KONFIG.startBraue}</div>
+      <h2 class="frage">${KONFIG.startFrage}</h2>
+      <div class="start-buttons" id="startButtons">
+        <button class="btn-ja"   id="btnJa">${KONFIG.startJa}</button>
+        <button class="btn-nein" id="btnNein">${KONFIG.startNein}</button>
+      </div>
+      <div class="reaktion" id="reaktion"></div>
+    </section>`;
+
+  const buehneBox = document.getElementById("startButtons");
+  const btnNein   = document.getElementById("btnNein");
+  const reaktion  = document.getElementById("reaktion");
+
+  // JA -> los geht's
+  document.getElementById("btnJa").addEventListener("click", neuStarten);
+
+  /* Lässt den NEIN-Button an eine zufällige freie Stelle springen –
+     und meidet dabei den Bereich des JA-Buttons. */
+  function wegspringen(){
+    const feld = buehneBox.getBoundingClientRect();
+    const b    = btnNein.getBoundingClientRect();
+    btnNein.classList.add("flieht");
+    const maxX = Math.max(0, feld.width  - b.width);
+    const maxY = Math.max(0, feld.height - b.height);
+
+    // JA-Button-Rechteck relativ zum Feld (Sperrzone mit etwas Puffer)
+    const ja  = document.getElementById("btnJa").getBoundingClientRect();
+    const sperr = {
+      x1: ja.left - feld.left - 12, y1: ja.top  - feld.top - 12,
+      x2: ja.right - feld.left + 12, y2: ja.bottom - feld.top + 12
+    };
+
+    // bis zu 20 Versuche, eine Position außerhalb der JA-Zone zu finden
+    let x = 0, y = 0;
+    for(let i=0;i<20;i++){
+      x = Math.random()*maxX;
+      y = Math.random()*maxY;
+      const ueberlappt = x < sperr.x2 && x + b.width  > sperr.x1 &&
+                         y < sperr.y2 && y + b.height > sperr.y1;
+      if(!ueberlappt) break;
     }
-    document.getElementById("celebIcon").textContent  = CONFIG.celebration.icon;
-    document.getElementById("celebTitle").textContent = CONFIG.celebration.title;
-    document.getElementById("celebBody").textContent  = CONFIG.celebration.body;
+    btnNein.style.left = x + "px";
+    btnNein.style.top  = y + "px";
   }
 
-  document.addEventListener("DOMContentLoaded", init);
+  /* Freche Reaktion anzeigen (rotierend durch die Sprüche). */
+  function reaktionZeigen(){
+    const sprueche = KONFIG.neinReaktionen;
+    reaktion.textContent = sprueche[neinReaktionIndex % sprueche.length];
+    reaktion.classList.add("zeigen");
+    neinReaktionIndex++;
+  }
+
+  // Maus: schon beim Drüberfahren flüchten
+  btnNein.addEventListener("mouseenter", wegspringen);
+  // Touch/Finger: beim Antippen ausweichen, bevor der Klick zählt
+  btnNein.addEventListener("touchstart", (e)=>{ e.preventDefault(); wegspringen(); reaktionZeigen(); }, { passive:false });
+  // Tastatur/Fokus: auch hier ausweichen
+  btnNein.addEventListener("focus", wegspringen);
+  // Falls sie ihn per Maus-Klick doch erwischt: freche Reaktion + weiterspringen
+  btnNein.addEventListener("click", (e)=>{ e.preventDefault(); reaktionZeigen(); wegspringen(); });
+}
+
+/* ================================================================
+   🎉  KONFETTI
+   ================================================================ */
+function konfettiStarten(){
+  const canvas = document.getElementById("konfetti");
+  const ctx = canvas.getContext("2d");
+  let breite, hoehe;
+  function groesse(){ breite = canvas.width = window.innerWidth; hoehe = canvas.height = window.innerHeight; }
+  groesse(); window.addEventListener("resize", groesse);
+
+  const farben = ["#d8744f","#3f7d78","#f0c987","#e8b4a0","#9ec7c2","#b9543a"];
+  const teilchen = Array.from({length:140}, ()=>({
+    x: Math.random()*breite, y: Math.random()*-hoehe,
+    r: 5+Math.random()*7, farbe: farben[Math.floor(Math.random()*farben.length)],
+    vx: -1.5+Math.random()*3, vy: 2+Math.random()*3.5,
+    dreh: Math.random()*Math.PI, drehV: -0.1+Math.random()*0.2
+  }));
+  const start = performance.now();
+  const DAUER = 2600;
+  function zeichnen(jetzt){
+    const vergangen = jetzt - start;
+    ctx.clearRect(0,0,breite,hoehe);
+    teilchen.forEach(t=>{
+      t.x += t.vx; t.y += t.vy; t.dreh += t.drehV;
+      if(t.y > hoehe+20 && vergangen < DAUER){ t.y = -20; t.x = Math.random()*breite; }
+      ctx.save(); ctx.translate(t.x,t.y); ctx.rotate(t.dreh);
+      ctx.fillStyle = t.farbe; ctx.fillRect(-t.r/2,-t.r/2,t.r,t.r*0.6); ctx.restore();
+    });
+    if(vergangen < DAUER+1500) requestAnimationFrame(zeichnen);
+    else ctx.clearRect(0,0,breite,hoehe);
+  }
+  requestAnimationFrame(zeichnen);
+}
+
+/* ================================================================
+   ▶️  START
+   ================================================================ */
+punkteAufbauen();
+startseiteZeigen();   // zuerst die Date-Frage, dann (bei JA) der Fragen-Pfad
 </script>
 </body>
 </html>
